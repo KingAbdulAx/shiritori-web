@@ -1,6 +1,6 @@
 import './GameOver.css';
 
-export default function GameOver({ players, onReset }) {
+export default function GameOver({ players, onReset, isOnline, isHost, onLeave }) {
     const sorted = [...players].sort((a, b) => b.score - a.score);
     const winner = sorted[0] && sorted[0].score > 0 ? sorted[0] : null;
 
@@ -40,9 +40,21 @@ export default function GameOver({ players, onReset }) {
                     ))}
                 </div>
 
-                <button className="gameover__restart-btn" onClick={onReset} id="play-again-btn">
-                    🔄 Play Again
-                </button>
+                <div className="gameover__actions">
+                    {(!isOnline || isHost) && onReset && (
+                        <button className="gameover__restart-btn" onClick={onReset} id="play-again-btn">
+                            🔄 Play Again
+                        </button>
+                    )}
+                    {isOnline && !isHost && (
+                        <p className="gameover__waiting">Waiting for host to restart...</p>
+                    )}
+                    {isOnline && onLeave && (
+                        <button className="gameover__leave-btn" onClick={onLeave} id="leave-game-btn">
+                            Leave Room
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );

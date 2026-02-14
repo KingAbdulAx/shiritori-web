@@ -88,3 +88,42 @@
     border-color: rgba(255, 107, 107, 0.5);
     transform: translateY(-1px);
 }
+
+/* ── Online Mode ── */
+.header__connection {
+    display: flex;
+    align-items: center;
+}
+
+.header__connection-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.header__connection-dot--connected {
+    background: var(--accent-secondary);
+    box-shadow: 0 0 8px rgba(0, 212, 170, 0.5);
+}
+
+.header__connection-dot--connecting {
+    background: var(--accent-gold);
+    animation: pulse 1s infinite;
+}
+
+.header__connection-dot--disconnected {
+    background: var(--accent-warning);
+}
+
+.header__room-badge {
+    padding: var(--space-xs) var(--space-md);
+    background: rgba(0, 212, 170, 0.1);
+    border: 1px solid rgba(0, 212, 170, 0.25);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    font-family: var(--font-display);
+    color: var(--accent-secondary);
+    letter-spacing: 2px;
+}

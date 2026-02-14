@@ -119,3 +119,9 @@
     background: rgba(255, 107, 107, 0.08);
     color: var(--accent-warning);
 }
+
+.round-end__waiting {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    padding: var(--space-md);
+}

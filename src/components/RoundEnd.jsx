@@ -1,6 +1,6 @@
 import './RoundEnd.css';
 
-export default function RoundEnd({ round, maxRounds, players, onNextRound, onEndGame }) {
+export default function RoundEnd({ round, maxRounds, players, onNextRound, onEndGame, isOnline, isHost }) {
     const sorted = [...players].sort((a, b) => b.score - a.score);
 
     return (
@@ -23,12 +23,19 @@ export default function RoundEnd({ round, maxRounds, players, onNextRound, onEnd
                 </div>
 
                 <div className="round-end__actions">
-                    <button className="round-end__next-btn" onClick={onNextRound} id="next-round-btn">
-                        Next Round →
-                    </button>
-                    <button className="round-end__end-btn" onClick={onEndGame} id="end-early-btn">
-                        End Game
-                    </button>
+                    {(!isOnline || isHost) && onNextRound && (
+                        <button className="round-end__next-btn" onClick={onNextRound} id="next-round-btn">
+                            Next Round →
+                        </button>
+                    )}
+                    {(!isOnline || isHost) && onEndGame && (
+                        <button className="round-end__end-btn" onClick={onEndGame} id="end-early-btn">
+                            End Game
+                        </button>
+                    )}
+                    {isOnline && !isHost && (
+                        <p className="round-end__waiting">Waiting for host to continue...</p>
+                    )}
                 </div>
             </div>
         </div>

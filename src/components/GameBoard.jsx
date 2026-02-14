@@ -15,16 +15,29 @@ export default function GameBoard({
     onSubmitWord,
     onAddExtraLetter,
     onEndGame,
+    // Online-specific props (optional)
+    isOnline = false,
+    myPlayerId = null,
 }) {
     const [wordInput, setWordInput] = useState('');
     const inputRef = useRef(null);
     const progressPercent = (timeLeft / turnTimeLimit) * 100;
 
+    // In online mode, find my player index
+    const myPlayerIdx = isOnline
+        ? players.findIndex(p => p.id === myPlayerId)
+        : null;
+
+    // Am I the active player? (online mode)
+    const isMyTurn = isOnline
+        ? activePlayerIdx !== null && myPlayerIdx === activePlayerIdx
+        : true; // In local mode, whoever clicked "Play" is active
+
     useEffect(() => {
-        if (phase === 'turn') {
+        if (phase === 'turn' && (isMyTurn || !isOnline)) {
             inputRef.current?.focus();
         }
-    }, [phase]);
+    }, [phase, isMyTurn, isOnline]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -68,39 +81,50 @@ export default function GameBoard({
             {phase === 'turn' && activePlayerIdx !== null && (
                 <div className="game__turn-area">
                     <div className="game__turn-player">
-                        <span className="game__turn-player-label">Playing:</span>
+                        <span className="game__turn-player-label">{isOnline && isMyTurn ? 'Your turn!' : 'Playing:'}</span>
                         <span className="game__turn-player-name">{players[activePlayerIdx]?.name}</span>
                     </div>
-                    <form className="game__word-form" onSubmit={handleSubmit}>
-                        <div className="game__input-wrap">
-                            <span className="game__input-prefix">{currentLetter.toUpperCase()}</span>
-                            <input
-                                ref={inputRef}
-                                id="word-input"
-                                className="game__word-input"
-                                type="text"
-                                value={wordInput}
-                                onChange={(e) => setWordInput(e.target.value)}
-                                placeholder="Type your word..."
-                                autoComplete="off"
-                                autoFocus
-                                disabled={isValidating}
-                            />
+
+                    {/* Show input only for the active player (online) or always (local) */}
+                    {(!isOnline || isMyTurn) ? (
+                        <form className="game__word-form" onSubmit={handleSubmit}>
+                            <div className="game__input-wrap">
+                                <span className="game__input-prefix">{currentLetter.toUpperCase()}</span>
+                                <input
+                                    ref={inputRef}
+                                    id="word-input"
+                                    className="game__word-input"
+                                    type="text"
+                                    value={wordInput}
+                                    onChange={(e) => setWordInput(e.target.value)}
+                                    placeholder="Type your word..."
+                                    autoComplete="off"
+                                    autoFocus
+                                    disabled={isValidating}
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                className="game__submit-btn"
+                                disabled={!wordInput.trim() || isValidating}
+                                id="submit-word-btn"
+                            >
+                                {isValidating ? (
+                                    <span className="game__spinner" />
+                                ) : (
+                                    'Submit'
+                                )}
+                            </button>
+                        </form>
+                    ) : (
+                        <div className="game__waiting-turn">
+                            <span className="game__waiting-spinner" />
+                            <span>Waiting for {players[activePlayerIdx]?.name} to play...</span>
                         </div>
-                        <button
-                            type="submit"
-                            className="game__submit-btn"
-                            disabled={!wordInput.trim() || isValidating}
-                            id="submit-word-btn"
-                        >
-                            {isValidating ? (
-                                <span className="game__spinner" />
-                            ) : (
-                                'Submit'
-                            )}
-                        </button>
-                    </form>
-                    {players[activePlayerIdx] && (
+                    )}
+
+                    {/* Show active player's letters */}
+                    {players[activePlayerIdx] && (!isOnline || isMyTurn) && (
                         <div className="game__your-letters">
                             <span className="game__your-letters-label">Your ending letters:</span>
                             <div className="game__your-letters-chips">
@@ -143,17 +167,27 @@ export default function GameBoard({
                 {players.map((p, i) => {
                     const isActive = activePlayerIdx === i && phase === 'turn';
                     const canPlay = phase === 'playing';
+                    const isMe = isOnline && p.id === myPlayerId;
+
+                    // In online mode, only show "Play" button for the current user
+                    const showPlayBtn = isOnline ? (canPlay && isMe) : canPlay;
+                    // In online mode, hide draw button (no addExtraLetter in online)
+                    const showDrawBtn = !isOnline && (phase === 'playing' || phase === 'turn');
+
                     return (
                         <div
-                            key={p.name}
-                            className={`game__player-card ${isActive ? 'game__player-card--active' : ''}`}
+                            key={p.id || p.name}
+                            className={`game__player-card ${isActive ? 'game__player-card--active' : ''} ${isMe ? 'game__player-card--me' : ''}`}
                         >
                             <div className="game__player-card-header">
                                 <div className="game__player-card-avatar" style={{ background: `hsl(${(i * 72) % 360}, 65%, 55%)` }}>
                                     {p.name[0].toUpperCase()}
                                 </div>
                                 <div className="game__player-card-info">
-                                    <span className="game__player-card-name">{p.name}</span>
+                                    <span className="game__player-card-name">
+                                        {p.name}
+                                        {isMe && <span className="game__you-badge">You</span>}
+                                    </span>
                                     <span className="game__player-card-score">Score: {p.score}</span>
                                 </div>
                                 {isActive && <span className="game__player-card-badge">Playing</span>}
@@ -169,16 +203,16 @@ export default function GameBoard({
                                 )}
                             </div>
                             <div className="game__player-card-actions">
-                                {canPlay && (
+                                {showPlayBtn && (
                                     <button
                                         className="game__play-btn"
-                                        onClick={() => onTakeTurn(i)}
+                                        onClick={() => onTakeTurn(isOnline ? undefined : i)}
                                         id={`play-btn-${i}`}
                                     >
                                         ▶ Play
                                     </button>
                                 )}
-                                {(phase === 'playing' || phase === 'turn') && (
+                                {showDrawBtn && (
                                     <button
                                         className="game__draw-btn"
                                         onClick={() => onAddExtraLetter(i)}

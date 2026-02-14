@@ -151,3 +151,34 @@
     transform: translateY(-2px);
     box-shadow: 0 8px 30px rgba(108, 99, 255, 0.4);
 }
+
+.gameover__actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.gameover__waiting {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    padding: var(--space-md);
+}
+
+.gameover__leave-btn {
+    width: 100%;
+    padding: var(--space-sm);
+    background: transparent;
+    border: 1px solid rgba(255, 107, 107, 0.2);
+    border-radius: var(--radius-lg);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-family: var(--font-body);
+}
+
+.gameover__leave-btn:hover {
+    background: rgba(255, 107, 107, 0.08);
+    color: var(--accent-warning);
+}

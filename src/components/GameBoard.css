@@ -492,6 +492,47 @@
     color: var(--accent-warning);
 }
 
+/* ── Online-specific ─────────────── */
+.game__waiting-turn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    color: var(--text-secondary);
+    font-size: var(--text-base);
+}
+
+.game__waiting-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(108, 99, 255, 0.3);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: rotate 0.8s linear infinite;
+}
+
+.game__you-badge {
+    display: inline-block;
+    margin-left: var(--space-sm);
+    padding: 1px 8px;
+    background: rgba(0, 212, 170, 0.15);
+    color: var(--accent-secondary);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    vertical-align: middle;
+}
+
+.game__player-card--me {
+    border-color: rgba(0, 212, 170, 0.3);
+}
+
+.game__player-card--me:hover {
+    border-color: rgba(0, 212, 170, 0.5);
+}
+
 /* ── Responsive ──────────────────── */
 @media (max-width: 600px) {
     .game__current-letter-display {

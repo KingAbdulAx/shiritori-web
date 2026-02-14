@@ -1,7 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
 import './Header.css';
 
-export default function Header({ phase, round, maxRounds, onReset }) {
+export default function Header({ phase, round, maxRounds, onReset, isOnline, roomCode, connectionStatus }) {
     return (
         <header className="header">
             <div className="header__inner">
@@ -14,14 +13,28 @@ export default function Header({ phase, round, maxRounds, onReset }) {
                 </div>
 
                 <div className="header__info">
-                    {phase !== 'lobby' && phase !== 'gameOver' && (
+                    {/* Connection status for online mode */}
+                    {isOnline && connectionStatus && (
+                        <div className="header__connection">
+                            <span className={`header__connection-dot header__connection-dot--${connectionStatus}`} />
+                        </div>
+                    )}
+
+                    {/* Room code badge for online mode */}
+                    {isOnline && roomCode && (
+                        <div className="header__room-badge" title="Room code">
+                            🌐 {roomCode}
+                        </div>
+                    )}
+
+                    {phase !== 'lobby' && phase !== 'gameOver' && phase !== 'home' && (
                         <div className="header__round-badge">
                             Round {round}/{maxRounds}
                         </div>
                     )}
-                    {phase !== 'lobby' && (
+                    {phase !== 'lobby' && phase !== 'home' && onReset && (
                         <button className="header__reset-btn" onClick={onReset} id="reset-game-btn">
-                            New Game
+                            {isOnline ? '← Leave' : 'New Game'}
                         </button>
                     )}
                 </div>
