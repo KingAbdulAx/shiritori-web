@@ -1,14 +1,23 @@
 .game {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
-    gap: var(--space-7);
+    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-areas:
+        "focus aside"
+        "more aside";
+    column-gap: var(--space-7);
+    row-gap: var(--space-6);
     align-items: start;
 }
 
-.game__main {
+.game__focus { grid-area: focus; }
+.game__aside { grid-area: aside; }
+.game__more { grid-area: more; }
+
+.game__focus,
+.game__more {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-6);
+    gap: var(--space-5);
     min-width: 0;
 }
 
@@ -16,14 +25,16 @@
 .game__letter-row {
     display: flex;
     align-items: center;
-    gap: var(--space-5);
+    gap: var(--space-4);
+    align-items: flex-start;
 }
 
 .game__current-letter {
-    --size: clamp(96px, 22vw, 136px);
+    --size: clamp(72px, 18vw, 104px);
     border-width: 3px;
-    border-bottom-width: 8px;
-    border-radius: 14px;
+    border-bottom-width: 7px;
+    border-radius: 12px;
+    font-size: clamp(2.4rem, 8vw, 3.4rem);
     font-weight: 900;
     animation: letterChange 200ms var(--ease) both;
 }
@@ -40,12 +51,20 @@
     min-width: 0;
 }
 
+.game__letter-side {
+    gap: var(--space-2);
+}
+
+.game__headline {
+    font-size: var(--text-2xl);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+
 .game__current-letter-hint {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: var(--text-xl);
-    letter-spacing: -0.02em;
-    line-height: 1.2;
+    font-size: var(--text-base);
+    color: var(--ink-2);
+    line-height: 1.4;
 }
 
 /* ── Clock ── */
@@ -61,14 +80,24 @@
 .game__timer-text {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: var(--text-2xl);
+    font-size: var(--text-lg);
     font-variant-numeric: tabular-nums;
     line-height: 1;
     color: var(--timer-color);
 }
 
+.game__timer {
+    margin-top: var(--space-2);
+}
+
 .game__timer--race .game__timer-text {
-    font-size: var(--text-lg);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--ink-3);
+}
+
+.game__timer--race .game__timer-bar {
+    height: 4px;
 }
 
 .game__timer-bar {
@@ -90,22 +119,6 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
-    padding-top: var(--space-5);
-    border-top: 2px solid var(--ink);
-}
-
-.game__turn-player {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-3);
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: var(--text-xl);
-    letter-spacing: -0.02em;
-}
-
-.game__turn-player-name {
-    color: var(--slate);
 }
 
 .game__word-form {
@@ -166,13 +179,16 @@
     min-width: 112px;
 }
 
-.game__feedback {
+.game__feedback,
+.game__guide {
     min-height: 1.5em;
-    margin-top: calc(var(--space-2) * -1);
     font-size: var(--text-base);
     font-weight: 500;
     color: var(--ink-2);
 }
+
+.game__guide--warn { color: var(--amber-deep); }
+.game__guide--good { color: var(--good); }
 
 .game__feedback--error { color: var(--bad); }
 .game__feedback--hint { color: var(--amber-deep); }
@@ -207,19 +223,22 @@
     margin-top: var(--space-2);
 }
 
-.game__waiting-turn {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    color: var(--ink-2);
-}
-
 .game__your-letters {
     display: grid;
-    gap: var(--space-2);
+    gap: var(--space-3);
 }
 
 .game__your-letters-label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--space-3);
+    font-size: var(--text-lg);
+}
+
+.game__your-letters-note {
+    font-family: var(--font-body);
+    font-weight: 400;
     font-size: var(--text-sm);
     color: var(--ink-2);
 }
@@ -227,11 +246,16 @@
 .game__your-letters-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: var(--space-2);
 }
 
 .game__letter-chip {
-    --size: 44px;
+    --size: 56px;
+    font-size: 1.5rem;
+}
+
+.game__letter-chip.tile--link {
+    transform: translateY(-2px);
 }
 
 /* ── Definition ── */
@@ -316,64 +340,60 @@
     font-weight: 600;
 }
 
-.game__player-card--away .game__player-card-header,
-.game__player-card--away .game__player-card-letters {
-    opacity: 0.55;
+.game__player-card--away {
+    opacity: 0.6;
 }
 
-/* Content stays aligned with the heading; the active bar sits in the gutter. */
 .game__player-card {
-    position: relative;
     display: grid;
-    gap: var(--space-3);
-    margin-left: calc(var(--space-4) * -1);
-    padding: var(--space-4) 0 var(--space-4) calc(var(--space-4) - 4px);
-    border-left: 4px solid transparent;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-3);
+    row-gap: 2px;
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--rule);
 }
 
-.game__player-card::after {
-    content: '';
-    position: absolute;
-    left: calc(var(--space-4) - 4px);
-    right: 0;
-    bottom: 0;
-    height: 1px;
-    background: var(--rule);
+.game__player-card--active .roster__name {
+    color: var(--slate);
 }
 
-.game__player-card--active {
-    border-left-color: var(--slate);
+.game__player-card--me {
     background: var(--paper-sunk);
-}
-
-.game__player-card-header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
+    margin: 0 calc(var(--space-3) * -1);
+    padding-left: var(--space-3);
     padding-right: var(--space-3);
 }
 
 .game__player-card-name {
     display: flex;
     align-items: center;
-    flex: 1;
     gap: var(--space-2);
     min-width: 0;
+}
+
+.game__player-card-stats {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+    white-space: nowrap;
 }
 
 .game__player-card-score {
     font-family: var(--font-display);
     font-weight: 800;
     font-variant-numeric: tabular-nums;
-    white-space: nowrap;
+    color: var(--ink);
 }
 
-.game__player-card-letters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    min-height: 34px;
-    align-items: center;
+/* Other players' letters: readable if you look, quiet if you don't. */
+.game__player-letters {
+    grid-column: 1 / -1;
+    font-size: var(--text-sm);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
 }
 
 .game__player-cleared {
@@ -382,36 +402,51 @@
     color: var(--good);
 }
 
+.game__help {
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+}
+
+.game__help summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--ink);
+    width: fit-content;
+}
+
+.game__help ul {
+    margin-top: var(--space-2);
+    padding-left: var(--space-5);
+    display: grid;
+    gap: var(--space-1);
+    max-width: 56ch;
+}
+
 .game__footer {
     margin-top: var(--space-4);
 }
 
-/* ── Narrow screens: letter and input first, players below ── */
+/* ── Narrow screens: what to do first, then players, then reference ── */
 @media (max-width: 900px) {
     .game {
         grid-template-columns: minmax(0, 1fr);
-        gap: var(--space-6);
+        grid-template-areas:
+            "focus"
+            "aside"
+            "more";
     }
 }
 
 @media (max-width: 600px) {
-    .game__main {
-        gap: var(--space-5);
-    }
-
-    .game__letter-row {
-        gap: var(--space-4);
-    }
-
-    .game__current-letter-hint {
-        font-size: var(--text-lg);
-    }
-
     .game__word-form {
         flex-direction: column;
     }
 
     .game__submit-btn {
         width: 100%;
+    }
+
+    .game__letter-chip {
+        --size: 52px;
     }
 }
