@@ -77,11 +77,13 @@ export default function Home({ onSelectMode }) {
                 <h3 className="home__rules-title">How a turn works</h3>
                 <ol className="home__rules-list">
                     <li>Everyone starts with 5 letters. Your words have to end with these.</li>
-                    <li>A starting letter is shown. Type a word that begins with it.</li>
+                    <li>A starting letter is shown. Type a word of 3 or more letters that begins with it.</li>
                     <li>If the word ends with one of your letters, that letter leaves your hand and becomes the next starting letter.</li>
-                    <li>A wrong word or running out of time adds a penalty letter to your hand.</li>
+                    <li>Chill mode: players take turns, 30 seconds each. An unknown word or a timeout adds a penalty letter.</li>
+                    <li>Rush mode: everyone types at once and the first valid word takes the letter. A wrong word locks you out for a moment instead.</li>
                     <li>Empty your hand first to win the round. A game is three rounds.</li>
                 </ol>
+                <p className="home__origin">Inspired by shiritori, the Japanese word-chain game.</p>
             </section>
         </div>
     );

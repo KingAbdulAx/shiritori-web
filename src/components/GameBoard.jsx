@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import './GameBoard.css';
 
 export default function GameBoard({
+    mode,
     players,
     currentLetter,
     activePlayerIdx,
@@ -9,57 +10,85 @@ export default function GameBoard({
     timeLeft,
     turnTimeLimit,
     usedWords,
-    isValidating,
     wordDefinition,
-    onTakeTurn,
+    feedback,
+    lockedUntil = 0,
+    onBeginTurn,
     onSubmitWord,
-    onAddExtraLetter,
     onEndGame,
     // Online-specific props (optional)
     isOnline = false,
     myPlayerId = null,
 }) {
     const [wordInput, setWordInput] = useState('');
+    const [sending, setSending] = useState(false);
+    const [now, setNow] = useState(() => Date.now());
     const inputRef = useRef(null);
-    const progressPercent = (timeLeft / turnTimeLimit) * 100;
 
-    // In online mode, find my player index
-    const myPlayerIdx = isOnline
-        ? players.findIndex(p => p.id === myPlayerId)
-        : null;
+    const isRace = phase === 'race';
+    const isTurn = phase === 'turn';
+    const isHandoff = phase === 'handoff';
 
-    // Am I the active player? (online mode)
-    const isMyTurn = isOnline
-        ? activePlayerIdx !== null && myPlayerIdx === activePlayerIdx
-        : true; // In local mode, whoever clicked "Play" is active
+    const activePlayer = activePlayerIdx !== null ? players[activePlayerIdx] : null;
+    const me = isOnline ? players.find((p) => p.id === myPlayerId) || null : activePlayer;
+    const isMyTurn = isOnline ? !!me && !!activePlayer && activePlayer.id === me.id : true;
+
+    // Who can type right now: everyone in a Rush race, the active player in Chill.
+    const canType = isRace ? !!me : isTurn && isMyTurn;
+    const lockMs = Math.max(0, lockedUntil - now);
+    const locked = lockMs > 0;
+
+    // Tick while a lockout is running so the button re-enables itself.
+    useEffect(() => {
+        if (lockedUntil <= Date.now()) return undefined;
+        const tick = () => setNow(Date.now());
+        const first = setTimeout(tick, 0); // sync the clock right away, then keep counting
+        const id = setInterval(tick, 200);
+        return () => {
+            clearTimeout(first);
+            clearInterval(id);
+        };
+    }, [lockedUntil]);
 
     useEffect(() => {
-        if (phase === 'turn' && (isMyTurn || !isOnline)) {
-            inputRef.current?.focus();
-        }
-    }, [phase, isMyTurn, isOnline]);
+        if (canType) inputRef.current?.focus();
+    }, [canType, currentLetter, phase, activePlayerIdx]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (wordInput.trim()) {
-            onSubmitWord(wordInput);
-            setWordInput('');
+        const word = wordInput.trim();
+        if (!word || sending || locked) return;
+        setSending(true);
+        setNow(Date.now());
+        try {
+            const res = await onSubmitWord(word);
+            if (res?.ok) setWordInput('');
+        } finally {
+            setSending(false);
+            inputRef.current?.focus();
         }
     };
 
+    const progressPercent = turnTimeLimit ? (timeLeft / turnTimeLimit) * 100 : 0;
     const timerClass =
         timeLeft <= 5 ? 'timer--danger' :
-            timeLeft <= 15 ? 'timer--warning' : '';
+            timeLeft <= 15 && isTurn ? 'timer--warning' : '';
 
-    const activePlayer = activePlayerIdx !== null ? players[activePlayerIdx] : null;
     const letter = currentLetter.toUpperCase();
+    const handLetters = me ? me.letters : [];
 
-    let hint = 'Press Play on your row to take a turn.';
-    if (phase === 'turn') {
+    let hint = '';
+    if (isHandoff) {
+        hint = `The next word starts with ${letter}.`;
+    } else if (isRace) {
+        hint = 'Be first. Start with this letter and end on one of yours.';
+    } else if (isTurn) {
         hint = isOnline && !isMyTurn
             ? `The next word starts with ${letter}.`
             : `Start your word with ${letter}.`;
     }
+
+    const timerLabel = isRace ? `New letter in ${timeLeft}s` : `${timeLeft}s`;
 
     return (
         <div className="game animate-in">
@@ -71,9 +100,9 @@ export default function GameBoard({
                     <div className="game__letter-side">
                         <p className="game__current-letter-hint">{hint}</p>
 
-                        {phase === 'turn' && (
-                            <div className={`game__timer ${timerClass}`} role="timer" aria-label={`${timeLeft} seconds left`}>
-                                <span className="game__timer-text">{timeLeft}s</span>
+                        {(isTurn || isRace) && (
+                            <div className={`game__timer ${isRace ? 'game__timer--race' : ''} ${timerClass}`} role="timer" aria-label={isRace ? `New starting letter in ${timeLeft} seconds` : `${timeLeft} seconds left`}>
+                                <span className="game__timer-text">{timerLabel}</span>
                                 <div className="game__timer-bar">
                                     <div
                                         className="game__timer-fill"
@@ -85,17 +114,34 @@ export default function GameBoard({
                     </div>
                 </section>
 
-                {/* ── Turn: whose go, and the input ───────── */}
-                {phase === 'turn' && activePlayer && (
-                    <section className="game__turn-area" aria-label="Current turn">
+                {/* ── Pass-and-play handoff ───────────────── */}
+                {isHandoff && activePlayer && (
+                    <section className="game__handoff" aria-label="Next player">
+                        <p className="game__handoff-label">Pass to</p>
+                        <p className="game__handoff-name">{activePlayer.name}</p>
+                        <button className="btn btn--primary game__handoff-btn" onClick={onBeginTurn} id="start-turn-btn">
+                            Start turn
+                        </button>
+                    </section>
+                )}
+
+                {/* ── Turn or race: whose go, and the input ── */}
+                {(isTurn || isRace) && (activePlayer || isRace) && (
+                    <section className="game__turn-area" aria-label={isRace ? 'Race' : 'Current turn'}>
                         <p className="game__turn-player">
-                            <span className="game__turn-player-label">{isOnline && isMyTurn ? 'Your turn' : 'Playing'}</span>
-                            {!(isOnline && isMyTurn) && (
-                                <span className="game__turn-player-name">{activePlayer.name}</span>
+                            {isRace ? (
+                                <span className="game__turn-player-label">Everyone plays at once</span>
+                            ) : (
+                                <>
+                                    <span className="game__turn-player-label">{isOnline && isMyTurn ? 'Your turn' : 'Playing'}</span>
+                                    {!(isOnline && isMyTurn) && (
+                                        <span className="game__turn-player-name">{activePlayer.name}</span>
+                                    )}
+                                </>
                             )}
                         </p>
 
-                        {(!isOnline || isMyTurn) ? (
+                        {canType ? (
                             <form className="game__word-form" onSubmit={handleSubmit}>
                                 <div className="game__input-wrap">
                                     <span className="game__input-prefix" aria-hidden="true">{letter}</span>
@@ -114,30 +160,38 @@ export default function GameBoard({
                                         spellCheck={false}
                                         enterKeyHint="send"
                                         autoFocus
-                                        disabled={isValidating}
                                     />
                                 </div>
                                 <button
                                     type="submit"
                                     className="btn btn--primary game__submit-btn"
-                                    disabled={!wordInput.trim() || isValidating}
+                                    disabled={!wordInput.trim() || sending || locked}
                                     id="submit-word-btn"
                                 >
-                                    {isValidating ? <span className="spinner" aria-label="Checking word" /> : 'Submit'}
+                                    {sending ? <span className="spinner" aria-label="Checking word" /> :
+                                        locked ? `Wait ${Math.ceil(lockMs / 1000)}s` : 'Submit'}
                                 </button>
                             </form>
                         ) : (
                             <p className="game__waiting-turn">
                                 <span className="spinner" aria-hidden="true" />
-                                <span>Waiting for {activePlayer.name} to play...</span>
+                                <span>{activePlayer ? `Waiting for ${activePlayer.name} to play...` : 'Waiting...'}</span>
                             </p>
                         )}
 
-                        {(!isOnline || isMyTurn) && (
+                        <p
+                            className={`game__feedback ${feedback ? `game__feedback--${feedback.kind}` : ''}`}
+                            role="status"
+                            aria-live="polite"
+                        >
+                            {feedback?.text || ''}
+                        </p>
+
+                        {canType && me && (
                             <div className="game__your-letters">
                                 <span className="game__your-letters-label">Your word must end with one of</span>
                                 <div className="game__your-letters-chips">
-                                    {activePlayer.letters.map((l, i) => (
+                                    {handLetters.map((l, i) => (
                                         <span key={i} className="tile game__letter-chip">{l}</span>
                                     ))}
                                 </div>
@@ -178,29 +232,27 @@ export default function GameBoard({
 
             {/* ── Players ─────────────────────────────── */}
             <aside className="game__aside" aria-label="Players">
-                <h3 className="game__players-title">Players</h3>
+                <h3 className="game__players-title">
+                    Players{mode === 'rush' && <span className="game__mode-tag">Rush</span>}
+                </h3>
                 <ul className="game__players roster">
                     {players.map((p, i) => {
-                        const isActive = activePlayerIdx === i && phase === 'turn';
-                        const canPlay = phase === 'playing';
+                        const isActive = activePlayerIdx === i && (isTurn || isHandoff);
                         const isMe = isOnline && p.id === myPlayerId;
-
-                        // In online mode, only show "Play" button for the current user
-                        const showPlayBtn = isOnline ? (canPlay && isMe) : canPlay;
-                        // In online mode, hide draw button (no addExtraLetter in online)
-                        const showDrawBtn = !isOnline && (phase === 'playing' || phase === 'turn');
+                        const away = p.connected === false;
 
                         return (
                             <li
-                                key={p.id || p.name}
-                                className={`game__player-card ${isActive ? 'game__player-card--active' : ''} ${isMe ? 'game__player-card--me' : ''}`}
+                                key={p.id}
+                                className={`game__player-card ${isActive ? 'game__player-card--active' : ''} ${isMe ? 'game__player-card--me' : ''} ${away ? 'game__player-card--away' : ''}`}
                             >
                                 <div className="game__player-card-header">
                                     <span className="tile tile--sm roster__avatar" aria-hidden="true">{p.name[0]}</span>
                                     <span className="game__player-card-name">
                                         <span className="roster__name">{p.name}</span>
                                         {isMe && <span className="badge">You</span>}
-                                        {isActive && <span className="badge badge--slate">Playing</span>}
+                                        {isActive && isTurn && <span className="badge badge--slate">Playing</span>}
+                                        {away && <span className="badge">Away</span>}
                                     </span>
                                     <span className="game__player-card-score">{p.score} {p.score === 1 ? 'pt' : 'pts'}</span>
                                 </div>
@@ -213,35 +265,12 @@ export default function GameBoard({
                                         <span className="game__player-cleared">Hand cleared</span>
                                     )}
                                 </div>
-
-                                {(showPlayBtn || showDrawBtn) && (
-                                    <div className="game__player-card-actions">
-                                        {showPlayBtn && (
-                                            <button
-                                                className="btn btn--primary game__play-btn"
-                                                onClick={() => onTakeTurn(isOnline ? undefined : i)}
-                                                id={`play-btn-${i}`}
-                                            >
-                                                Play
-                                            </button>
-                                        )}
-                                        {showDrawBtn && (
-                                            <button
-                                                className="btn game__draw-btn"
-                                                onClick={() => onAddExtraLetter(i)}
-                                                id={`draw-btn-${i}`}
-                                            >
-                                                Draw a letter
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
                             </li>
                         );
                     })}
                 </ul>
 
-                {(phase === 'playing' || phase === 'turn') && (
+                {onEndGame && (
                     <div className="game__footer">
                         <button className="btn btn--quiet game__end-btn" onClick={onEndGame} id="end-game-btn">
                             End game early

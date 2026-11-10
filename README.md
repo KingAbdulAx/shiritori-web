@@ -1,166 +1,112 @@
-# 🔗 Shiritori Web — English Word Chain Game
+# Tailword
 
-A modern, browser-based version of **English Shiritori**, the classic Japanese word-chaining game adapted for English. Built with React + Vite.
+A word-chain game for phones and browsers. Each word starts with the last letter of the one before it, and the first player to empty their hand of letters wins the round. Inspired by shiritori, the Japanese word-chain game. Built with React + Vite, with a Socket.IO server for online rooms.
 
-> Originally a [Discord bot](https://github.com/KingAbdulAx/English-Shiritori-Discord-Bot) — now playable right in your browser!
-
-![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green)
+> Started as a [Discord bot](https://github.com/KingAbdulAx/English-Shiritori-Discord-Bot).
 
 ---
 
-## 🎮 How It Works
+## How to play
 
-1. **Play locally** (add players and pass the keyboard) or **online** (create a room, share the code or invite link, play on separate devices).
-2. Each player starts with **5 random letters**.
-3. A **starting letter** is revealed. On your turn, type a word that:
-   - **Starts** with the current global letter.
-   - **Ends** with one of *your* assigned letters.
-   - Is a **valid English word** (verified via [Free Dictionary API](https://dictionaryapi.dev/)).
-4. ✅ **Valid word** → that ending letter is removed from your hand and becomes the next starting letter.
-5. ❌ **Invalid word or timeout** → you receive a penalty letter.
-6. 🏆 First player to **clear all their letters** wins the round.
-7. The game runs for **3 rounds** — highest score wins!
+1. Each player gets **5 letters**.
+2. A **starting letter** is shown. Type a word that starts with it, has **3 or more letters**, ends with **one of your letters**, and hasn't been played yet.
+3. A valid word removes that letter from your hand, and the letter becomes the next starting letter.
+4. First to empty their hand wins the round (+1 point). A game is **3 rounds**.
 
----
+Two ways to play online (the host picks in the waiting room):
 
-## ✨ Features
+| Mode | How it works |
+| ---- | ------------ |
+| **Chill** (default) | Take turns, 30 seconds each. An unknown word or running out of time adds a penalty letter. Rule slips (wrong start or end letter, too short, already used) and near misses just let you try again. |
+| **Rush** | Everyone types at once. The first valid word takes the letter (a 250 ms photo-finish window favours whoever has more letters left). A wrong word locks you out for a moment instead of adding a letter. If nobody finds a word for 20 seconds the starting letter changes. |
 
-- **Local multiplayer** — add as many players as you like
-- **Online multiplayer** — rooms of up to 8, join by code or invite link (native share sheet on phones)
-- **30-second turn timer** with animated progress bar
-- **Live word validation** via the Dictionary API (+ shows definitions!)
-- **Multi-round scoring** with leaderboard
-- **Draw extra letter** button for an added challenge
-- **Used words tracker** — no repeats allowed
-- **Responsive design** — plays great on desktop and mobile
-- **Premium dark UI** with glassmorphism, gradient accents, and micro-animations
+Pass-and-play on one device always uses Chill, with a "pass to next player" screen between turns.
+
+**Fair hands.** Letters are dealt from tiers by how easy they are to end a word with. A hand is 3 easy letters, 1 medium and 1 wildcard, so it never holds more than one hard letter (`y w f i b u`). `j v q x z` are never dealt. Penalty letters come from the easy and medium tiers only.
+
+**Words** are checked locally against a 79,000-word list (British and American spellings, from [SCOWL](http://wordlist.aspell.net/)), so validation is instant and works offline. Definitions come from the [Free Dictionary API](https://dictionaryapi.dev/) as a best-effort extra; if it is slow or down, the game carries on without them.
+
+**Reconnecting.** Each player gets a private token. If you reload or lose signal, you take your seat back automatically within 60 seconds.
 
 ---
 
-## 🚀 Getting Started
+## Run it locally
 
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) 18+ and npm
-
-### Installation
-
-```bash
-# From the project root
-cd shiritori-web
-
-# Install dependencies
-npm install
-
-# Start the dev server
-npm run dev
-```
-
-The app will be available at **http://localhost:5173/**.
-
-### Online play locally
-
-Online play needs the Socket.IO game server (`server/`). Run both together:
+Needs Node 18+ (the tests use 20+).
 
 ```bash
 npm install && (cd server && npm install)
-npm run dev:all        # server on :3001 + Vite on :5173
+npm run dev:all        # game server on :3001 + Vite on :5173
 ```
 
-In development the client talks to `http://localhost:3001` unless `VITE_SERVER_URL` is set.
-
-### Production Build
+Local play works with just `npm run dev`. In development the client talks to `http://localhost:3001` unless `VITE_SERVER_URL` is set.
 
 ```bash
-npm run build
-npm run preview
+npm test               # rules and room engine tests
+npm run lint
+npm run build && npm run preview
 ```
 
 ---
 
-## 🌐 Deployment
-
-The app is two pieces: a static frontend and a Node/Socket.IO game server.
+## Deployment
 
 | Piece | Where | Notes |
 | ----- | ----- | ----- |
-| Frontend | Vercel | Build `npm run build`, output `dist`. Set `VITE_SERVER_URL` (below) and redeploy |
-| Game server | Any Node 18+ host (currently a Coolify VPS) | Base directory `server/`, start `npm start`, port `3001`, domain with TLS and WebSocket support |
+| Frontend | Vercel | Build `npm run build`, output `dist`. Set `VITE_SERVER_URL` and redeploy |
+| Game server | Any Node 18+ host (currently a Coolify VPS) | Base directory `server/`, start `npm start`, port `3001`, domain with TLS and WebSocket support. `server/Dockerfile` is there as a fallback build pack |
 
-Frontend environment variables (see `.env.example`; Vite inlines them **at build time**, so changing one needs a redeploy):
+Frontend variables (see `.env.example`; Vite inlines them **at build time**, so changing one needs a redeploy):
 
 | Variable | Required | Purpose |
 | -------- | -------- | ------- |
 | `VITE_SERVER_URL` | Production | Game server URL, no trailing slash, `https://` on an https site |
 | `VITE_SOCKET_PATH` | No | Socket.IO path (default `/socket.io`) |
-| `VITE_BASE` | No | Public base path when served under a sub-path, e.g. `/eshiritori/` (default `/`) |
+| `VITE_BASE` | No | Public base path when served under a sub-path, e.g. `/tailword/` (default `/`) |
+
+Server variable (set in Coolify):
+
+| Variable | Required | Purpose |
+| -------- | -------- | ------- |
+| `ALLOWED_ORIGINS` | Recommended | Comma-separated sites allowed to connect, e.g. `https://tailword.azedlabs.com`. Unset means any origin |
+| `PORT` | No | Defaults to `3001` |
 
 If `VITE_SERVER_URL` is missing in a production build, online play is disabled with a clear message instead of silently pointing players at their own machine.
 
-Server notes: `GET /health` reports status and open rooms. Rooms live in memory, so run a single instance; a restart ends active games.
+Server notes: `GET /health` reports status, open rooms and word count. Rooms live in memory, so run a single instance; a restart ends active games and players see a "connection lost" message. Idle rooms are swept after 3 hours.
 
 ---
 
-## 🗂️ Project Structure
+## Project structure
 
 ```
-shiritori-web/
-├── index.html                  # Root HTML with SEO meta & Google Fonts
-├── package.json
-├── vite.config.js
-├── .env.example                # Frontend environment variables
-├── server/                     # Node + Express + Socket.IO game server
-│   └── index.js                # Rooms, turns, timers, word validation
+├── index.html
+├── scripts/build-wordlist.mjs   # rebuilds server/words.txt from SCOWL (npm run build:words)
+├── server/                      # Node + Express + Socket.IO
+│   ├── index.js                 # sockets, rooms, CORS, health
+│   ├── room.js                  # the game engine: phases, modes, clocks (no sockets)
+│   ├── rules.js                 # dealing, word checks, lockouts, race winner
+│   ├── dictionary.js            # word set + near-miss lookup
+│   ├── definition.js            # optional definitions
+│   ├── words.txt                # word list (see WORDS-LICENSE.txt)
+│   ├── Dockerfile               # fallback build for Coolify
+│   └── test/                    # node --test suites
 └── src/
-    ├── main.jsx                # React entry point
-    ├── config.js               # Build-time config (server URL, socket path)
-    ├── index.css               # Design system (tokens, animations, reset)
-    ├── App.jsx                 # Root component — orchestrates game phases
-    ├── App.css
-    ├── useGame.js              # Local game logic hook (all Shiritori rules)
-    ├── useOnlineGame.js        # Online client hook (Socket.IO connection & state)
-    └── components/
-        ├── Header.jsx / .css   # Sticky header with branding & round badge
-        ├── Home.jsx / .css     # Local vs online mode picker
-        ├── Lobby.jsx / .css    # Local player management form & animated hero
-        ├── OnlineLobby.jsx / .css # Create/join room, invite link, waiting room
-        ├── GameBoard.jsx / .css # Turn timer, word input, player cards
-        ├── RoundEnd.jsx / .css # Round summary with scores
-        ├── GameOver.jsx / .css # Final leaderboard & winner highlight
-        └── MessageLog.jsx / .css # Floating game event log
+    ├── useGame.js               # pass-and-play: runs the same Room class in the browser
+    ├── useOnlineGame.js         # online client: connect, rejoin, submit
+    ├── session.js               # remembers your seat for reloads
+    ├── words.js                 # loads the word list for local play
+    └── components/              # Home, Lobby, OnlineLobby, GameBoard, RoundEnd, GameOver, ...
 ```
 
----
-
-## 🛠️ Tech Stack
-
-| Layer       | Technology                                                    |
-| ----------- | ------------------------------------------------------------- |
-| Framework   | [React 19](https://react.dev/)                                |
-| Bundler     | [Vite 7](https://vite.dev/)                                   |
-| Styling     | Vanilla CSS with custom properties (design tokens)            |
-| Typography  | [Outfit](https://fonts.google.com/specimen/Outfit) + [Inter](https://fonts.google.com/specimen/Inter) (Google Fonts) |
-| Word API    | [Free Dictionary API](https://dictionaryapi.dev/)             |
+The game rules live in one place (`server/rules.js` and `server/room.js`). The online server and the browser's pass-and-play both use them, so the two can't drift apart.
 
 ---
 
-## 📝 Game Rules Reference
+## Tech
 
-| Rule | Detail |
-| ---- | ------ |
-| Starting hand | 5 random letters from `a–y` (excluding `q`, `x`, `z`) |
-| Word start | Must begin with the current global letter |
-| Word end | Must end with one of your own letters |
-| Valid word | Checked against the Dictionary API |
-| On success | Ending letter removed from hand; becomes next global letter |
-| On failure / timeout | Player receives a random penalty letter |
-| Round win | First player to empty their hand |
-| Game length | 3 rounds (configurable in `useGame.js`) |
+React 19, Vite 7, vanilla CSS with design tokens, Montserrat + Inter (self-hosted via Fontsource), Socket.IO.
 
----
+## License
 
-## 📄 License
-
-MIT — feel free to fork, modify, and share.
+MIT. The word list is derived from SCOWL; see `server/WORDS-LICENSE.txt`.

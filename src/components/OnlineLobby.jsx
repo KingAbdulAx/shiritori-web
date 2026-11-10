@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import './OnlineLobby.css';
 
+const MODE_OPTIONS = [
+    { id: 'chill', label: 'Chill', desc: 'Take turns. 30 seconds each.' },
+    { id: 'rush', label: 'Rush', desc: 'Everyone types at once. First valid word takes the letter.' },
+];
+
 const sanitizeCode = (value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
 
 // Drop ?room=CODE from the address bar once it has been used.
@@ -16,11 +21,15 @@ export default function OnlineLobby({
     roomCode,
     players,
     isHost,
+    hostId,
+    mode = 'chill',
+    resuming = false,
     connectionStatus,
     error,
     initialCode = '',
     onCreateRoom,
     onJoinRoom,
+    onSetMode,
     onStartGame,
     onLeaveRoom,
     onClearError,
@@ -92,8 +101,8 @@ export default function OnlineLobby({
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'English Shiritori',
-                    text: `Join my Shiritori room ${roomCode}`,
+                    title: 'Tailword',
+                    text: `Join my Tailword room ${roomCode}`,
                     url,
                 });
                 return;
@@ -113,6 +122,22 @@ export default function OnlineLobby({
 
     const backToChoice = () => { onClearError?.(); setView('choice'); };
 
+    // ── Taking our seat back after a reload ──────────────
+    if (resuming && !roomCode) {
+        return (
+            <div className="online-lobby animate-in">
+                <h2 className="online-lobby__title">Rejoining your room</h2>
+                <p className="online-lobby__waiting-msg" role="status">
+                    <span className="spinner" aria-hidden="true" />
+                    Rejoining your room…
+                </p>
+                <button className="btn btn--quiet online-lobby__back" onClick={onLeaveRoom} id="back-to-home-btn">
+                    Back to home
+                </button>
+            </div>
+        );
+    }
+
     // ── Choice View ──────────────────────────────────────
     if (activeView === 'choice') {
         return (
@@ -131,6 +156,8 @@ export default function OnlineLobby({
                         <span className="online-lobby__choice-desc">Enter the 6-letter code.</span>
                     </button>
                 </div>
+
+                {error && <p className="notice notice--error" role="alert">{error}</p>}
 
                 <button className="btn btn--quiet online-lobby__back" onClick={onLeaveRoom} id="back-to-home-btn">
                     Back to home
@@ -256,14 +283,42 @@ export default function OnlineLobby({
             <section aria-label="Players">
                 <h3 className="online-lobby__players-title">Players ({players.length} of 8)</h3>
                 <ul className="roster">
-                    {players.map((p, i) => (
+                    {players.map((p) => (
                         <li key={p.id} className="roster__row">
                             <span className="tile tile--sm roster__avatar" aria-hidden="true">{p.name[0]}</span>
                             <span className="roster__name">{p.name}</span>
-                            {i === 0 && <span className="badge">Host</span>}
+                            {p.id === hostId && <span className="badge">Host</span>}
+                            {p.connected === false && <span className="badge">Away</span>}
                         </li>
                     ))}
                 </ul>
+            </section>
+
+            <section aria-label="Game mode">
+                <h3 className="online-lobby__players-title">Mode</h3>
+                {isHost ? (
+                    <div className="mode-picker" role="radiogroup" aria-label="Game mode">
+                        {MODE_OPTIONS.map((m) => (
+                            <button
+                                key={m.id}
+                                type="button"
+                                role="radio"
+                                aria-checked={mode === m.id}
+                                className={`mode-picker__option ${mode === m.id ? 'mode-picker__option--on' : ''}`}
+                                onClick={() => onSetMode(m.id)}
+                                id={`mode-${m.id}-btn`}
+                            >
+                                <span className="mode-picker__label">{m.label}</span>
+                                <span className="mode-picker__desc">{m.desc}</span>
+                            </button>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="mode-picker__fixed">
+                        <span className="mode-picker__label">{MODE_OPTIONS.find((m) => m.id === mode)?.label}</span>
+                        <span className="mode-picker__desc">{MODE_OPTIONS.find((m) => m.id === mode)?.desc}</span>
+                    </p>
+                )}
             </section>
 
             {error && <p className="notice notice--error" role="alert">{error}</p>}

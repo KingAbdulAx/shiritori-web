@@ -1,11 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { SERVER_URL, SOCKET_PATH, CONFIG_PROBLEM } from './config';
+import { loadSession, saveSession, clearSession } from './session';
 
 const MSG_UNREACHABLE = "Can't reach the game server. Check your connection and try again.";
 const MSG_UNAVAILABLE = "Online play isn't available right now.";
 const MSG_SESSION_LOST = 'Connection lost, so you were removed from the room. Create or join a room to play again.';
 const ACK_TIMEOUT_MS = 10000;
+const FEEDBACK_MS = 4500;
 
 // Resolves once the socket is connected, rejects if it isn't within `ms`.
 function whenConnected(socket, ms = 12000) {
@@ -30,9 +32,12 @@ export default function useOnlineGame() {
     const [connectionStatus, setConnectionStatus] = useState('disconnected'); // disconnected | connecting | connected
     const [roomCode, setRoomCode] = useState(null);
     const [myPlayerId, setMyPlayerId] = useState(null);
-    const [isHost, setIsHost] = useState(false);
+    const [hostId, setHostId] = useState(null);
+    // True while we are taking our seat back after a reload (a saved session exists).
+    const [resuming, setResuming] = useState(() => !!loadSession());
 
-    // Game state (mirrors useGame.js shape)
+    // Game state (same shape as useGame)
+    const [mode, setMode] = useState('chill');
     const [phase, setPhase] = useState('lobby');
     const [players, setPlayers] = useState([]);
     const [currentLetter, setCurrentLetter] = useState('');
@@ -43,19 +48,23 @@ export default function useOnlineGame() {
     const [timeLeft, setTimeLeft] = useState(30);
     const [turnTimeLimit, setTurnTimeLimit] = useState(30);
     const [usedWords, setUsedWords] = useState(new Set());
-    const [isValidating, setIsValidating] = useState(false);
     const [wordDefinition, setWordDefinition] = useState(null);
+    const [seq, setSeq] = useState(0);
     const [error, setError] = useState(null);
+    const [feedback, setFeedback] = useState(null);
+    const [lockedUntil, setLockedUntil] = useState(0);
 
     const socketRef = useRef(null);
-    const inRoomRef = useRef(false);   // we have joined/created a room on the server
-    const droppedRef = useRef(false);  // the connection dropped since we last connected
+    const seqRef = useRef(0);
+    const inRoomRef = useRef(false); // the UI believes we are in a room
+    const feedbackTimer = useRef(null);
 
     // Forget everything about the current room (keeps the socket itself).
     const resetRoomState = useCallback(() => {
         inRoomRef.current = false;
         setRoomCode(null);
-        setIsHost(false);
+        setHostId(null);
+        setMode('chill');
         setPhase('lobby');
         setPlayers([]);
         setCurrentLetter('');
@@ -63,8 +72,20 @@ export default function useOnlineGame() {
         setRound(1);
         setMessages([]);
         setUsedWords(new Set());
-        setIsValidating(false);
         setWordDefinition(null);
+        setFeedback(null);
+        setLockedUntil(0);
+    }, []);
+
+    const showFeedback = useCallback((res) => {
+        clearTimeout(feedbackTimer.current);
+        if (!res || res.ok) {
+            setFeedback(null);
+            return;
+        }
+        const kind = res.type === 'slow' || res.reason === 'stale' ? 'slow' : res.reason === 'near' ? 'hint' : 'error';
+        setFeedback({ id: Date.now(), kind, text: res.message || res.error });
+        feedbackTimer.current = setTimeout(() => setFeedback(null), FEEDBACK_MS);
     }, []);
 
     // ── Connect to server ──────────────────────────────────
@@ -73,8 +94,9 @@ export default function useOnlineGame() {
         if (socketRef.current) return socketRef.current;
 
         if (CONFIG_PROBLEM) {
-            console.error(`[shiritori] ${CONFIG_PROBLEM}`);
+            console.error(`[tailword] ${CONFIG_PROBLEM}`);
             setError(MSG_UNAVAILABLE);
+            setResuming(false);
             return null;
         }
 
@@ -85,48 +107,67 @@ export default function useOnlineGame() {
             timeout: 10000,
         });
 
+        // Take our seat back, after a reload or after the connection dropped.
+        const rejoin = () => {
+            const saved = loadSession();
+            if (!saved) {
+                setResuming(false);
+                return;
+            }
+            s.timeout(ACK_TIMEOUT_MS).emit('rejoinRoom', { code: saved.code, token: saved.token }, (err, res) => {
+                if (err) {
+                    // No answer: keep the saved seat and try again on the next connect.
+                    setError(MSG_UNREACHABLE);
+                } else if (res?.success) {
+                    inRoomRef.current = true;
+                    setMyPlayerId(res.playerId);
+                    setRoomCode(res.roomCode);
+                    setError(null);
+                } else {
+                    // The room is gone (server restarted, or we were away too long).
+                    clearSession();
+                    resetRoomState();
+                    setError(MSG_SESSION_LOST);
+                }
+                setResuming(false);
+            });
+        };
+
         s.on('connect', () => {
             setConnectionStatus('connected');
-            setMyPlayerId(s.id);
             setError((prev) => (prev === MSG_UNREACHABLE ? null : prev));
-
-            // The server drops a player the moment their socket disconnects, so if we were
-            // in a room before the drop we are no longer in it, even though the UI still shows it.
-            if (droppedRef.current && inRoomRef.current) {
-                resetRoomState();
-                setError(MSG_SESSION_LOST);
-            }
-            droppedRef.current = false;
+            rejoin();
         });
 
-        s.on('disconnect', (reason) => {
+        s.on('disconnect', () => {
             setConnectionStatus('disconnected');
-            if (reason !== 'io client disconnect') droppedRef.current = true;
         });
 
         s.on('connect_error', () => {
             // socket.io keeps retrying on its own
             setConnectionStatus('connecting');
             setError(MSG_UNREACHABLE);
+            setResuming(false);
         });
 
         // Game state updates from server
         s.on('gameState', (state) => {
             inRoomRef.current = true;
+            seqRef.current = state.seq;
+            setMode(state.mode);
+            setSeq(state.seq);
             setPhase(state.phase);
             setPlayers(state.players);
             setCurrentLetter(state.currentLetter);
             setActivePlayerIdx(state.activePlayerIdx);
             setRound(state.round);
             setMaxRounds(state.maxRounds);
-            setMessages(state.messages.map(m => ({
-                ...m,
-                time: new Date(m.time),
-            })));
+            setMessages(state.messages.map((m) => ({ ...m, time: new Date(m.time) })));
             setUsedWords(new Set(state.usedWords));
             setTurnTimeLimit(state.turnTimeLimit);
+            setTimeLeft(state.timeLeft);
             setWordDefinition(state.wordDefinition);
-            setIsHost(state.hostId === s.id);
+            setHostId(state.hostId);
             setRoomCode(state.code);
             setError(null);
         });
@@ -135,13 +176,12 @@ export default function useOnlineGame() {
             setTimeLeft(data.timeLeft);
         });
 
-        s.on('validating', (v) => {
-            setIsValidating(v);
-        });
+        // Private messages, such as "someone else got there first".
+        s.on('notice', (notice) => showFeedback(notice));
 
         socketRef.current = s;
         return s;
-    }, [resetRoomState]);
+    }, [resetRoomState, showFeedback]);
 
     // ── Disconnect ─────────────────────────────────────────
     const disconnect = useCallback(() => {
@@ -149,22 +189,27 @@ export default function useOnlineGame() {
             socketRef.current.disconnect();
             socketRef.current = null;
         }
-        droppedRef.current = false;
         resetRoomState();
         setConnectionStatus('disconnected');
         setMyPlayerId(null);
         setError(null);
     }, [resetRoomState]);
 
-    // Cleanup on unmount
+    // Reloaded in the middle of a game: reconnect and take the seat back.
     useEffect(() => {
+        // Deferred so the connect-time state updates do not run inside the effect body.
+        const start = setTimeout(() => {
+            if (loadSession()) connect();
+        }, 0);
         return () => {
+            clearTimeout(start);
+            clearTimeout(feedbackTimer.current);
             if (socketRef.current) {
                 socketRef.current.disconnect();
                 socketRef.current = null;
             }
         };
-    }, []);
+    }, [connect]);
 
     // ── Room Actions ───────────────────────────────────────
     const roomRequest = useCallback((event, payload) => {
@@ -186,6 +231,8 @@ export default function useOnlineGame() {
                             reject(response.error);
                         } else {
                             inRoomRef.current = true;
+                            saveSession({ code: response.roomCode, token: response.token, name: payload.name });
+                            setMyPlayerId(response.playerId);
                             setRoomCode(response.roomCode);
                             setError(null);
                             resolve(response.roomCode);
@@ -210,50 +257,43 @@ export default function useOnlineGame() {
         [roomRequest],
     );
 
-    // ── Game Actions (same API shape as useGame) ───────────
-    const startGame = useCallback(() => {
-        socketRef.current?.emit('startGame', {}, (response) => {
-            if (response?.error) setError(response.error);
+    // ── Game Actions ───────────────────────────────────────
+    const simple = useCallback((event, payload = {}) => {
+        socketRef.current?.timeout(ACK_TIMEOUT_MS).emit(event, payload, (err, response) => {
+            if (err) setError(MSG_UNREACHABLE);
+            else if (response?.error) setError(response.error);
         });
     }, []);
 
-    const takeTurn = useCallback(() => {
-        setTimeLeft(turnTimeLimit);
-        socketRef.current?.emit('takeTurn', {}, (response) => {
-            if (response?.error) setError(response.error);
-        });
-    }, [turnTimeLimit]);
+    const setRoomMode = useCallback((m) => simple('setMode', { mode: m }), [simple]);
+    const startGame = useCallback(() => simple('startGame'), [simple]);
+    const nextRound = useCallback(() => simple('nextRound'), [simple]);
+    const endGame = useCallback(() => simple('endGame'), [simple]);
+    const resetGame = useCallback(() => simple('resetGame'), [simple]);
 
-    const submitWord = useCallback(async (word) => {
-        // Rule violations are reported in the game log by the server; only surface unexpected errors.
-        const expected = ['Empty word', 'Wrong starting letter', 'Wrong ending letter', 'Word already used', 'Invalid word'];
-        socketRef.current?.emit('submitWord', { word }, (response) => {
-            if (response?.error && !expected.includes(response.error)) {
-                setError(response.error);
+    // Resolves with the server's verdict so the board can keep or clear what was typed.
+    const submitWord = useCallback((word) => new Promise((resolve) => {
+        const s = socketRef.current;
+        if (!s) {
+            resolve({ ok: false });
+            return;
+        }
+        s.timeout(ACK_TIMEOUT_MS).emit('submitWord', { word, seq: seqRef.current }, (err, res) => {
+            if (err) {
+                const failure = { ok: false, reason: 'network', message: MSG_UNREACHABLE };
+                showFeedback(failure);
+                resolve(failure);
+                return;
             }
+            showFeedback(res);
+            if (res?.lockMs) setLockedUntil(Date.now() + res.lockMs);
+            resolve(res);
         });
-    }, []);
+    }), [showFeedback]);
 
-    const nextRound = useCallback(() => {
-        socketRef.current?.emit('nextRound', {}, (response) => {
-            if (response?.error) setError(response.error);
-        });
-    }, []);
-
-    const endGame = useCallback(() => {
-        socketRef.current?.emit('endGame', {}, (response) => {
-            if (response?.error) setError(response.error);
-        });
-    }, []);
-
-    const resetGame = useCallback(() => {
-        socketRef.current?.emit('resetGame', {}, (response) => {
-            if (response?.error) setError(response.error);
-        });
-    }, []);
-
-    const leaveRoom = useCallback(() => {
+    const clearSessionAndLeave = useCallback(() => {
         socketRef.current?.emit('leaveRoom', {}, () => { });
+        clearSession();
         disconnect();
     }, [disconnect]);
 
@@ -264,11 +304,14 @@ export default function useOnlineGame() {
         connectionStatus,
         roomCode,
         myPlayerId,
-        isHost,
+        hostId,
+        isHost: !!myPlayerId && myPlayerId === hostId,
+        resuming,
         error,
         clearError,
 
         // Game state (same shape as useGame)
+        mode,
         phase,
         players,
         currentLetter,
@@ -279,17 +322,19 @@ export default function useOnlineGame() {
         timeLeft,
         turnTimeLimit,
         usedWords,
-        isValidating,
         wordDefinition,
+        seq,
+        feedback,
+        lockedUntil,
 
         // Actions
         connect,
         disconnect,
         createRoom,
         joinRoom,
-        leaveRoom,
+        leaveRoom: clearSessionAndLeave,
+        setMode: setRoomMode,
         startGame,
-        takeTurn,
         submitWord,
         nextRound,
         endGame,

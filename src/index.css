@@ -353,3 +353,18 @@ button:disabled {
   border-color: var(--slate);
   color: var(--paper);
 }
+
+/* ===== Notices ===== */
+.notice {
+    padding: var(--space-3) var(--space-4);
+    border-left: 4px solid var(--ink);
+    background: var(--paper-sunk);
+    font-size: var(--text-sm);
+}
+
+.notice--error {
+    border-left-color: var(--bad);
+    background: var(--bad-wash);
+    color: var(--bad);
+    font-weight: 500;
+}

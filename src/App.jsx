@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import useGame from './useGame';
 import useOnlineGame from './useOnlineGame';
+import { loadSession, clearSession } from './session';
 import Home from './components/Home';
 import Header from './components/Header';
 import Lobby from './components/Lobby';
@@ -11,13 +12,10 @@ import GameOver from './components/GameOver';
 import MessageLog from './components/MessageLog';
 import './App.css';
 
+const PLAY_PHASES = ['turn', 'race', 'handoff'];
+
 function LocalGame({ onBack }) {
   const game = useGame();
-
-  const handleReset = () => {
-    game.resetGame();
-    onBack();
-  };
 
   return (
     <>
@@ -25,21 +23,25 @@ function LocalGame({ onBack }) {
         phase={game.phase}
         round={game.round}
         maxRounds={game.maxRounds}
-        onReset={handleReset}
+        onReset={onBack}
       />
 
       <main className="app__main container">
         {game.phase === 'lobby' && (
           <Lobby
             players={game.players}
+            ready={game.ready}
+            loadError={game.loadError}
+            lobbyError={game.lobbyError}
             onAddPlayer={game.addPlayer}
             onRemovePlayer={game.removePlayer}
             onStart={game.startGame}
           />
         )}
 
-        {(game.phase === 'playing' || game.phase === 'turn') && (
+        {PLAY_PHASES.includes(game.phase) && (
           <GameBoard
+            mode={game.mode}
             players={game.players}
             currentLetter={game.currentLetter}
             activePlayerIdx={game.activePlayerIdx}
@@ -47,11 +49,11 @@ function LocalGame({ onBack }) {
             timeLeft={game.timeLeft}
             turnTimeLimit={game.turnTimeLimit}
             usedWords={game.usedWords}
-            isValidating={game.isValidating}
             wordDefinition={game.wordDefinition}
-            onTakeTurn={game.takeTurn}
+            feedback={game.feedback}
+            lockedUntil={game.lockedUntil}
+            onBeginTurn={game.beginTurn}
             onSubmitWord={game.submitWord}
-            onAddExtraLetter={game.addExtraLetter}
             onEndGame={game.endGame}
           />
         )}
@@ -69,7 +71,7 @@ function LocalGame({ onBack }) {
         {game.phase === 'gameOver' && (
           <GameOver
             players={game.players}
-            onReset={handleReset}
+            onReset={game.playAgain}
           />
         )}
       </main>
@@ -84,7 +86,7 @@ function LocalGame({ onBack }) {
 function OnlineGame({ onBack, initialCode }) {
   const game = useOnlineGame();
 
-  const handleReset = () => {
+  const handleLeave = () => {
     game.leaveRoom();
     onBack();
   };
@@ -99,7 +101,7 @@ function OnlineGame({ onBack, initialCode }) {
         phase={showLobby ? 'lobby' : game.phase}
         round={game.round}
         maxRounds={game.maxRounds}
-        onReset={handleReset}
+        onReset={handleLeave}
         isOnline
         roomCode={game.roomCode}
         connectionStatus={game.connectionStatus}
@@ -111,19 +113,24 @@ function OnlineGame({ onBack, initialCode }) {
             roomCode={game.roomCode}
             players={game.players}
             isHost={game.isHost}
+            hostId={game.hostId}
+            mode={game.mode}
+            resuming={game.resuming}
             connectionStatus={game.connectionStatus}
             error={game.error}
             initialCode={initialCode}
             onCreateRoom={game.createRoom}
             onJoinRoom={game.joinRoom}
+            onSetMode={game.setMode}
             onStartGame={game.startGame}
-            onLeaveRoom={handleReset}
+            onLeaveRoom={handleLeave}
             onClearError={game.clearError}
           />
         )}
 
-        {(game.phase === 'playing' || game.phase === 'turn') && !showLobby && (
+        {PLAY_PHASES.includes(game.phase) && !showLobby && (
           <GameBoard
+            mode={game.mode}
             players={game.players}
             currentLetter={game.currentLetter}
             activePlayerIdx={game.activePlayerIdx}
@@ -131,11 +138,11 @@ function OnlineGame({ onBack, initialCode }) {
             timeLeft={game.timeLeft}
             turnTimeLimit={game.turnTimeLimit}
             usedWords={game.usedWords}
-            isValidating={game.isValidating}
             wordDefinition={game.wordDefinition}
-            onTakeTurn={game.takeTurn}
+            feedback={game.feedback}
+            lockedUntil={game.lockedUntil}
             onSubmitWord={game.submitWord}
-            onEndGame={game.endGame}
+            onEndGame={game.isHost ? game.endGame : null}
             isOnline
             myPlayerId={game.myPlayerId}
           />
@@ -159,7 +166,7 @@ function OnlineGame({ onBack, initialCode }) {
             onReset={game.isHost ? game.resetGame : null}
             isOnline
             isHost={game.isHost}
-            onLeave={handleReset}
+            onLeave={handleLeave}
           />
         )}
       </main>
@@ -171,10 +178,19 @@ function OnlineGame({ onBack, initialCode }) {
   );
 }
 
+// Decide where to start: an invite link wins, then a saved online seat, then the home screen.
+function initialState() {
+  const room = new URLSearchParams(window.location.search).get('room') || '';
+  if (room) {
+    clearSession(); // an invite link means a fresh join, not the old seat
+    return { room, mode: 'online' };
+  }
+  return { room: '', mode: loadSession() ? 'online' : null };
+}
+
 function App() {
-  // An invite link (?room=CODE) goes straight to online play with the code filled in.
-  const [initialRoom] = useState(() => new URLSearchParams(window.location.search).get('room') || '');
-  const [mode, setMode] = useState(initialRoom ? 'online' : null); // null | 'local' | 'online'
+  const [initial] = useState(initialState);
+  const [mode, setMode] = useState(initial.mode); // null | 'local' | 'online'
 
   if (mode === null) {
     return (
@@ -197,7 +213,7 @@ function App() {
 
   return (
     <div className="app">
-      <OnlineGame onBack={() => setMode(null)} initialCode={initialRoom} />
+      <OnlineGame onBack={() => setMode(null)} initialCode={initial.room} />
     </div>
   );
 }

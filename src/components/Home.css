@@ -185,3 +185,9 @@
         gap: var(--space-7);
     }
 }
+
+.home__origin {
+    margin-top: var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--ink-3);
+}

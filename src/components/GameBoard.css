@@ -67,6 +67,10 @@
     color: var(--timer-color);
 }
 
+.game__timer--race .game__timer-text {
+    font-size: var(--text-lg);
+}
+
 .game__timer-bar {
     height: 8px;
     border-radius: 4px;
@@ -162,6 +166,47 @@
     min-width: 112px;
 }
 
+.game__feedback {
+    min-height: 1.5em;
+    margin-top: calc(var(--space-2) * -1);
+    font-size: var(--text-base);
+    font-weight: 500;
+    color: var(--ink-2);
+}
+
+.game__feedback--error { color: var(--bad); }
+.game__feedback--hint { color: var(--amber-deep); }
+.game__feedback--slow { color: var(--slate); }
+
+/* ── Pass-and-play handoff ── */
+.game__handoff {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    padding-top: var(--space-5);
+    border-top: 2px solid var(--ink);
+}
+
+.game__handoff-label {
+    font-size: var(--text-sm);
+    color: var(--ink-2);
+}
+
+.game__handoff-name {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(2rem, 7vw, 3rem);
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+    color: var(--slate);
+    overflow-wrap: anywhere;
+}
+
+.game__handoff-btn {
+    min-width: 200px;
+    margin-top: var(--space-2);
+}
+
 .game__waiting-turn {
     display: flex;
     align-items: center;
@@ -254,8 +299,26 @@
 
 /* ── Players ── */
 .game__players-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
     margin-bottom: var(--space-3);
     font-size: var(--text-lg);
+}
+
+.game__mode-tag {
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--amber-wash);
+    color: var(--amber-deep);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: 600;
+}
+
+.game__player-card--away .game__player-card-header,
+.game__player-card--away .game__player-card-letters {
+    opacity: 0.55;
 }
 
 /* Content stays aligned with the heading; the active bar sits in the gutter. */
@@ -317,20 +380,6 @@
     font-family: var(--font-display);
     font-weight: 800;
     color: var(--good);
-}
-
-.game__player-card-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    padding-right: var(--space-3);
-}
-
-.game__play-btn,
-.game__draw-btn {
-    min-height: 40px;
-    padding: 0 var(--space-4);
-    font-size: var(--text-sm);
 }
 
 .game__footer {
