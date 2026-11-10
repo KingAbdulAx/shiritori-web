@@ -1,50 +1,88 @@
 import './Home.css';
 
+// A sample chain, drawn as tiles. Each word starts under the last tile of the one above.
+const DEMO = [
+    { word: 'chain', from: 0 },
+    { word: 'north', from: 4 },
+    { word: 'hand', from: 8 },
+];
+const COLUMNS = 12;
+
+function Chain() {
+    let tileIndex = 0;
+    return (
+        <div className="chain" aria-hidden="true">
+            {DEMO.map(({ word, from }, w) => (
+                <div
+                    key={word}
+                    className="chain__word"
+                    style={{ '--from': from + 1, '--len': word.length }}
+                >
+                    {word.split('').map((letter, i) => {
+                        const isLink = i === word.length - 1 || (i === 0 && w > 0);
+                        const delay = tileIndex++;
+                        return (
+                            <span
+                                key={i}
+                                className={`tile chain__tile ${isLink ? 'tile--link' : ''}`}
+                                style={{ '--i': delay }}
+                            >
+                                {letter}
+                            </span>
+                        );
+                    })}
+                </div>
+            ))}
+            <div
+                className="chain__word"
+                style={{ '--from': COLUMNS, '--len': 1 }}
+            >
+                <span className="chain__slot" style={{ '--i': 12 }} />
+            </div>
+        </div>
+    );
+}
+
 export default function Home({ onSelectMode }) {
     return (
         <div className="home animate-in">
-            <div className="home__hero">
-                <div className="home__hero-letters">
-                    {'SHIRITORI'.split('').map((l, i) => (
-                        <span key={i} className="home__hero-letter" style={{ animationDelay: `${i * 0.08}s` }}>
-                            {l}
-                        </span>
-                    ))}
-                </div>
-                <p className="home__hero-subtitle">English Word Chain Game</p>
-                <p className="home__hero-desc">
-                    Chain words by matching the <span className="home__highlight">starting</span> and{' '}
-                    <span className="home__highlight-green">ending</span> letters. Clear your hand to win!
+            <section className="home__intro">
+                <h2 className="home__title">Chain words.<br />Empty your hand.</h2>
+                <p className="home__lead">
+                    Each word starts with the last letter of the one before it. Get rid of
+                    all your letters before anyone else does.
                 </p>
-            </div>
 
-            <div className="home__modes">
-                <button className="home__mode-card home__mode-card--local" onClick={() => onSelectMode('local')} id="mode-local-btn">
-                    <div className="home__mode-icon">🎮</div>
-                    <h2 className="home__mode-title">Local Play</h2>
-                    <p className="home__mode-desc">Play on the same device. Add players and take turns passing the screen.</p>
-                    <span className="home__mode-badge">Same Device</span>
-                </button>
+                <div className="home__chain">
+                    <Chain />
+                    <p className="visually-hidden">
+                        Example: chain, north, hand. The last letter of each word is the first letter of the next.
+                    </p>
+                </div>
 
-                <button className="home__mode-card home__mode-card--online" onClick={() => onSelectMode('online')} id="mode-online-btn">
-                    <div className="home__mode-icon">🌐</div>
-                    <h2 className="home__mode-title">Online Play</h2>
-                    <p className="home__mode-desc">Create or join a room. Play with friends on different devices in real-time.</p>
-                    <span className="home__mode-badge home__mode-badge--online">Multiplayer</span>
-                </button>
-            </div>
+                <div className="home__modes">
+                    <button className="btn btn--primary home__mode" onClick={() => onSelectMode('online')} id="mode-online-btn">
+                        <span className="home__mode-title">Play online</span>
+                        <span className="home__mode-desc">Create a room and send friends the link.</span>
+                    </button>
 
-            <div className="home__rules">
-                <h3 className="home__rules-title">📜 How to Play</h3>
+                    <button className="btn home__mode" onClick={() => onSelectMode('local')} id="mode-local-btn">
+                        <span className="home__mode-title">Play on one device</span>
+                        <span className="home__mode-desc">Pass the screen around the table.</span>
+                    </button>
+                </div>
+            </section>
+
+            <section className="home__rules">
+                <h3 className="home__rules-title">How a turn works</h3>
                 <ol className="home__rules-list">
-                    <li>Each player starts with <strong>5 random letters</strong>.</li>
-                    <li>A starting letter is revealed. Type a word that <strong>starts with that letter</strong>.</li>
-                    <li>The word must <strong>end with one of your letters</strong>.</li>
-                    <li>Valid words remove that letter from your hand & become the next starting letter.</li>
-                    <li>Invalid words or timeouts give you a <strong>penalty letter</strong>.</li>
-                    <li>First to clear all letters <strong>wins the round</strong>!</li>
+                    <li>Everyone starts with 5 letters. Your words have to end with these.</li>
+                    <li>A starting letter is shown. Type a word that begins with it.</li>
+                    <li>If the word ends with one of your letters, that letter leaves your hand and becomes the next starting letter.</li>
+                    <li>A wrong word or running out of time adds a penalty letter to your hand.</li>
+                    <li>Empty your hand first to win the round. A game is three rounds.</li>
                 </ol>
-            </div>
+            </section>
         </div>
     );
 }

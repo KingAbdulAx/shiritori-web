@@ -12,7 +12,7 @@ A modern, browser-based version of **English Shiritori**, the classic Japanese w
 
 ## 🎮 How It Works
 
-1. **Add players** in the lobby (local multiplayer — pass the keyboard!).
+1. **Play locally** (add players and pass the keyboard) or **online** (create a room, share the code or invite link, play on separate devices).
 2. Each player starts with **5 random letters**.
 3. A **starting letter** is revealed. On your turn, type a word that:
    - **Starts** with the current global letter.
@@ -28,6 +28,7 @@ A modern, browser-based version of **English Shiritori**, the classic Japanese w
 ## ✨ Features
 
 - **Local multiplayer** — add as many players as you like
+- **Online multiplayer** — rooms of up to 8, join by code or invite link (native share sheet on phones)
 - **30-second turn timer** with animated progress bar
 - **Live word validation** via the Dictionary API (+ shows definitions!)
 - **Multi-round scoring** with leaderboard
@@ -59,12 +60,46 @@ npm run dev
 
 The app will be available at **http://localhost:5173/**.
 
+### Online play locally
+
+Online play needs the Socket.IO game server (`server/`). Run both together:
+
+```bash
+npm install && (cd server && npm install)
+npm run dev:all        # server on :3001 + Vite on :5173
+```
+
+In development the client talks to `http://localhost:3001` unless `VITE_SERVER_URL` is set.
+
 ### Production Build
 
 ```bash
 npm run build
 npm run preview
 ```
+
+---
+
+## 🌐 Deployment
+
+The app is two pieces: a static frontend and a Node/Socket.IO game server.
+
+| Piece | Where | Notes |
+| ----- | ----- | ----- |
+| Frontend | Vercel | Build `npm run build`, output `dist`. Set `VITE_SERVER_URL` (below) and redeploy |
+| Game server | Any Node 18+ host (currently a Coolify VPS) | Base directory `server/`, start `npm start`, port `3001`, domain with TLS and WebSocket support |
+
+Frontend environment variables (see `.env.example`; Vite inlines them **at build time**, so changing one needs a redeploy):
+
+| Variable | Required | Purpose |
+| -------- | -------- | ------- |
+| `VITE_SERVER_URL` | Production | Game server URL, no trailing slash, `https://` on an https site |
+| `VITE_SOCKET_PATH` | No | Socket.IO path (default `/socket.io`) |
+| `VITE_BASE` | No | Public base path when served under a sub-path, e.g. `/eshiritori/` (default `/`) |
+
+If `VITE_SERVER_URL` is missing in a production build, online play is disabled with a clear message instead of silently pointing players at their own machine.
+
+Server notes: `GET /health` reports status and open rooms. Rooms live in memory, so run a single instance; a restart ends active games.
 
 ---
 
@@ -75,15 +110,22 @@ shiritori-web/
 ├── index.html                  # Root HTML with SEO meta & Google Fonts
 ├── package.json
 ├── vite.config.js
+├── .env.example                # Frontend environment variables
+├── server/                     # Node + Express + Socket.IO game server
+│   └── index.js                # Rooms, turns, timers, word validation
 └── src/
     ├── main.jsx                # React entry point
+    ├── config.js               # Build-time config (server URL, socket path)
     ├── index.css               # Design system (tokens, animations, reset)
     ├── App.jsx                 # Root component — orchestrates game phases
     ├── App.css
-    ├── useGame.js              # Core game logic hook (all Shiritori rules)
+    ├── useGame.js              # Local game logic hook (all Shiritori rules)
+    ├── useOnlineGame.js        # Online client hook (Socket.IO connection & state)
     └── components/
         ├── Header.jsx / .css   # Sticky header with branding & round badge
-        ├── Lobby.jsx / .css    # Player management form & animated hero
+        ├── Home.jsx / .css     # Local vs online mode picker
+        ├── Lobby.jsx / .css    # Local player management form & animated hero
+        ├── OnlineLobby.jsx / .css # Create/join room, invite link, waiting room
         ├── GameBoard.jsx / .css # Turn timer, word input, player cards
         ├── RoundEnd.jsx / .css # Round summary with scores
         ├── GameOver.jsx / .css # Final leaderboard & winner highlight

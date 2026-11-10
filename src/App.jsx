@@ -81,7 +81,7 @@ function LocalGame({ onBack }) {
   );
 }
 
-function OnlineGame({ onBack }) {
+function OnlineGame({ onBack, initialCode }) {
   const game = useOnlineGame();
 
   const handleReset = () => {
@@ -113,6 +113,7 @@ function OnlineGame({ onBack }) {
             isHost={game.isHost}
             connectionStatus={game.connectionStatus}
             error={game.error}
+            initialCode={initialCode}
             onCreateRoom={game.createRoom}
             onJoinRoom={game.joinRoom}
             onStartGame={game.startGame}
@@ -171,7 +172,9 @@ function OnlineGame({ onBack }) {
 }
 
 function App() {
-  const [mode, setMode] = useState(null); // null | 'local' | 'online'
+  // An invite link (?room=CODE) goes straight to online play with the code filled in.
+  const [initialRoom] = useState(() => new URLSearchParams(window.location.search).get('room') || '');
+  const [mode, setMode] = useState(initialRoom ? 'online' : null); // null | 'local' | 'online'
 
   if (mode === null) {
     return (
@@ -194,7 +197,7 @@ function App() {
 
   return (
     <div className="app">
-      <OnlineGame onBack={() => setMode(null)} />
+      <OnlineGame onBack={() => setMode(null)} initialCode={initialRoom} />
     </div>
   );
 }

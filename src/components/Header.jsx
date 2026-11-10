@@ -1,40 +1,49 @@
 import './Header.css';
 
+const STATUS_LABEL = {
+    connected: 'Connected',
+    connecting: 'Connecting',
+    disconnected: 'Disconnected',
+};
+
 export default function Header({ phase, round, maxRounds, onReset, isOnline, roomCode, connectionStatus }) {
+    const inGame = phase !== 'lobby' && phase !== 'home';
     return (
-        <header className="header">
-            <div className="header__inner">
+        <header className={`header ${inGame ? 'header--game' : ''}`}>
+            <div className="header__inner container">
                 <div className="header__brand">
-                    <div className="header__logo">
-                        <span className="header__logo-icon">🔗</span>
-                        <h1 className="header__title">Shiritori</h1>
-                    </div>
-                    <p className="header__subtitle">English Word Chain</p>
+                    <span className="tile tile--link tile--sm header__mark" aria-hidden="true">S</span>
+                    <h1 className="header__title">Shiritori</h1>
                 </div>
 
                 <div className="header__info">
-                    {/* Connection status for online mode */}
                     {isOnline && connectionStatus && (
-                        <div className="header__connection">
-                            <span className={`header__connection-dot header__connection-dot--${connectionStatus}`} />
-                        </div>
+                        <span
+                            className={`header__connection header__connection--${connectionStatus}`}
+                            role="status"
+                            title={STATUS_LABEL[connectionStatus] || connectionStatus}
+                        >
+                            <span className="header__connection-dot" />
+                            <span className="visually-hidden">{STATUS_LABEL[connectionStatus] || connectionStatus}</span>
+                        </span>
                     )}
 
-                    {/* Room code badge for online mode */}
                     {isOnline && roomCode && (
-                        <div className="header__room-badge" title="Room code">
-                            🌐 {roomCode}
-                        </div>
+                        <span className="header__room" title="Room code">
+                            <span className="header__room-label">Room</span>
+                            <span className="header__room-code">{roomCode}</span>
+                        </span>
                     )}
 
                     {phase !== 'lobby' && phase !== 'gameOver' && phase !== 'home' && (
-                        <div className="header__round-badge">
-                            Round {round}/{maxRounds}
-                        </div>
+                        <span className="header__round">
+                            Round {round} of {maxRounds}
+                        </span>
                     )}
+
                     {phase !== 'lobby' && phase !== 'home' && onReset && (
-                        <button className="header__reset-btn" onClick={onReset} id="reset-game-btn">
-                            {isOnline ? '← Leave' : 'New Game'}
+                        <button className="btn btn--quiet header__reset-btn" onClick={onReset} id="reset-game-btn">
+                            {isOnline ? <>Leave<span className="header__reset-extra"> room</span></> : 'New game'}
                         </button>
                     )}
                 </div>

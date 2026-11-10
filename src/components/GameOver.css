@@ -1,184 +1,82 @@
 .gameover {
-    display: flex;
-    justify-content: center;
-    padding: var(--space-3xl) 0;
+    max-width: 640px;
+    display: grid;
+    gap: var(--space-5);
 }
 
-.gameover__card {
-    text-align: center;
-    background: var(--bg-card);
-    border: 1px solid var(--border-accent);
-    border-radius: var(--radius-xl);
-    padding: var(--space-2xl) var(--space-xl);
-    max-width: 480px;
-    width: 100%;
-    backdrop-filter: blur(12px);
-    box-shadow: var(--shadow-glow);
-    position: relative;
-    overflow: hidden;
-}
-
-.gameover__card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: var(--gradient-hero);
-}
-
-/* ── Confetti ────────────────────── */
-.gameover__confetti {
-    display: flex;
-    justify-content: center;
-    gap: var(--space-md);
-    margin-bottom: var(--space-lg);
-}
-
-.gameover__confetti-item {
-    font-size: 2rem;
-    animation: bounce 0.8s ease-in-out infinite;
-}
-
-/* ── Title ───────────────────────── */
 .gameover__title {
-    font-family: var(--font-display);
-    font-size: var(--text-3xl);
+    font-size: clamp(2rem, 5vw, 2.75rem);
     font-weight: 900;
-    background: var(--gradient-hero);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: var(--space-xl);
+    letter-spacing: -0.035em;
 }
 
-/* ── Winner ──────────────────────── */
+/* The winner's name, spelled out in tiles. */
 .gameover__winner {
-    margin-bottom: var(--space-xl);
-}
-
-.gameover__winner-crown {
-    font-size: 3rem;
-    margin-bottom: var(--space-xs);
-    animation: float 2s ease-in-out infinite;
+    display: grid;
+    gap: var(--space-3);
 }
 
 .gameover__winner-name {
-    font-family: var(--font-display);
-    font-size: var(--text-2xl);
-    font-weight: 800;
-    color: var(--accent-gold);
-    margin-bottom: 2px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-5);
+}
+
+.gameover__winner-word {
+    display: flex;
+    gap: 4px;
+}
+
+.gameover__winner-tile {
+    --size: clamp(34px, 9vw, 56px);
 }
 
 .gameover__winner-score {
-    font-size: var(--text-sm);
-    color: var(--text-muted);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-xl);
+    letter-spacing: -0.02em;
 }
 
 .gameover__no-winner {
+    color: var(--ink-2);
     font-size: var(--text-lg);
-    color: var(--text-secondary);
-    margin-bottom: var(--space-xl);
-}
-
-/* ── Leaderboard ─────────────────── */
-.gameover__leaderboard {
-    margin-bottom: var(--space-xl);
 }
 
 .gameover__leaderboard-title {
-    font-family: var(--font-display);
-    font-size: var(--text-base);
-    font-weight: 700;
-    color: var(--text-secondary);
-    margin-bottom: var(--space-md);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-}
-
-.gameover__lb-row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-md);
-    padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-md);
-    background: var(--bg-glass);
-    margin-bottom: 6px;
-}
-
-.gameover__lb-row--first {
-    background: rgba(255, 215, 0, 0.06);
-    border: 1px solid rgba(255, 215, 0, 0.15);
+    margin-bottom: var(--space-3);
+    font-size: var(--text-lg);
 }
 
 .gameover__lb-rank {
-    font-size: var(--text-lg);
-    min-width: 32px;
-    text-align: center;
+    width: 28px;
+    font-family: var(--font-display);
+    font-weight: 800;
 }
 
 .gameover__lb-name {
     flex: 1;
-    text-align: left;
-    font-weight: 600;
-    color: var(--text-primary);
 }
 
 .gameover__lb-score {
+    font-family: var(--font-display);
     font-weight: 800;
-    font-family: var(--font-display);
-    color: var(--accent-secondary);
-}
-
-/* ── Restart Button ──────────────── */
-.gameover__restart-btn {
-    width: 100%;
-    padding: var(--space-md);
-    background: var(--gradient-accent);
-    border: none;
-    border-radius: var(--radius-lg);
-    color: white;
-    font-family: var(--font-display);
-    font-size: var(--text-lg);
-    font-weight: 700;
-    cursor: pointer;
-    transition: all var(--transition-base);
-}
-
-.gameover__restart-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(108, 99, 255, 0.4);
+    font-variant-numeric: tabular-nums;
 }
 
 .gameover__actions {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
 }
 
 .gameover__waiting {
-    color: var(--text-muted);
-    font-size: var(--text-sm);
-    padding: var(--space-md);
+    color: var(--ink-2);
 }
 
-.gameover__leave-btn {
-    width: 100%;
-    padding: var(--space-sm);
-    background: transparent;
-    border: 1px solid rgba(255, 107, 107, 0.2);
-    border-radius: var(--radius-lg);
-    color: var(--text-muted);
-    font-size: var(--text-sm);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    font-family: var(--font-body);
-}
-
-.gameover__leave-btn:hover {
-    background: rgba(255, 107, 107, 0.08);
-    color: var(--accent-warning);
+@media (max-width: 600px) {
+    .gameover__actions .btn--primary {
+        width: 100%;
+    }
 }

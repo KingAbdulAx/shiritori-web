@@ -1,76 +1,67 @@
-/* ===== CSS Custom Properties / Design Tokens ===== */
+/* ==========================================================================
+   Design tokens — flat, paper-and-tile. Azed Labs palette, Montserrat + Inter.
+   No gradients, glass, glow or blur anywhere.
+   ========================================================================== */
 :root {
-  /* Colors */
-  --bg-primary: #0a0a14;
-  --bg-secondary: #111125;
-  --bg-card: rgba(20, 20, 45, 0.65);
-  --bg-card-hover: rgba(30, 30, 60, 0.75);
-  --bg-glass: rgba(255, 255, 255, 0.04);
-  --bg-glass-strong: rgba(255, 255, 255, 0.08);
+  /* Surfaces */
+  --paper: #F8F7F2;
+  --paper-sunk: #EFEDE4;
+  --tile: #FFFDF8;
 
-  --accent-primary: #6c63ff;
-  --accent-secondary: #00d4aa;
-  --accent-warning: #ff6b6b;
-  --accent-gold: #ffd700;
+  /* Ink */
+  --ink: #1A1D20;
+  --ink-2: #484D54;
+  --ink-3: #686D74;
 
-  --gradient-hero: linear-gradient(135deg, #6c63ff 0%, #00d4aa 50%, #ff6b6b 100%);
-  --gradient-accent: linear-gradient(135deg, #6c63ff 0%, #00d4aa 100%);
-  --gradient-warm: linear-gradient(135deg, #ff6b6b 0%, #ffd700 100%);
-  --gradient-card: linear-gradient(135deg, rgba(108, 99, 255, 0.1) 0%, rgba(0, 212, 170, 0.05) 100%);
+  /* Lines */
+  --rule: #D9D6CA;
+  --rule-strong: #B9B5A6;
 
-  --text-primary: #e8e8f0;
-  --text-secondary: #a0a0b8;
-  --text-muted: #6b6b82;
-  --text-bright: #ffffff;
+  /* Colour: slate for structure, amber for the one thing that matters now */
+  --slate: #2B4C7E;
+  --slate-deep: #1F3A63;
+  --amber: #D97706;
+  --amber-deep: #A85A04;
+  --amber-wash: #FBEBD3;
 
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-accent: rgba(108, 99, 255, 0.3);
+  /* State */
+  --good: #2D6A4F;
+  --bad: #B3261E;
+  --bad-wash: #F9E4E1;
 
-  /* Spacing */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-  --space-2xl: 48px;
-  --space-3xl: 64px;
-  --space-4xl: 96px;
+  /* Type */
+  --font-display: 'Montserrat Variable', 'Montserrat', system-ui, sans-serif;
+  --font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
 
-  /* Typography */
-  --font-display: 'Outfit', sans-serif;
-  --font-body: 'Inter', sans-serif;
-
-  --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
   --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  --text-3xl: 2rem;
-  --text-4xl: 2.5rem;
-  --text-5xl: 3.5rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
 
-  /* Borders & Radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-full: 9999px;
+  /* Space (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 72px;
 
-  /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 30px rgba(108, 99, 255, 0.15);
-  --shadow-glow-green: 0 0 30px rgba(0, 212, 170, 0.15);
+  /* Radius by role, not one value for everything */
+  --radius-tile: 8px;
+  --radius-control: 6px;
+  --radius-pill: 999px;
 
-  /* Transitions */
-  --transition-fast: 150ms ease;
-  --transition-base: 250ms ease;
-  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Tile geometry: the visible "thickness" under every tile */
+  --tile-edge: 3px;
+
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --focus: 0 0 0 3px var(--paper), 0 0 0 5px var(--slate);
 }
 
-/* ===== Reset & Base ===== */
+/* ===== Reset & base ===== */
 *,
 *::before,
 *::after {
@@ -81,134 +72,284 @@
 
 html {
   font-size: 16px;
-  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   font-family: var(--font-body);
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: var(--paper);
+  color: var(--ink);
   min-height: 100vh;
-  line-height: 1.6;
+  min-height: 100dvh;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(108, 99, 255, 0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(0, 212, 170, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 30% at 10% 60%, rgba(255, 107, 107, 0.06) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
-}
-
 #root {
-  position: relative;
-  z-index: 1;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
-a {
-  color: var(--accent-primary);
-  text-decoration: none;
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
 }
 
-/* ===== Utility Classes ===== */
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+  border-radius: var(--radius-control);
+}
+
+::selection {
+  background: var(--amber-wash);
+  color: var(--ink);
+}
+
+/* ===== Layout ===== */
 .container {
-  max-width: 1000px;
+  width: 100%;
+  max-width: 1040px;
   margin: 0 auto;
-  padding: 0 var(--space-lg);
+  padding: 0 var(--space-5);
 }
 
-/* ===== Animations ===== */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+@media (max-width: 600px) {
+  .container {
+    padding: 0 var(--space-4);
+  }
 }
 
-@keyframes fadeInScale {
-  from { opacity: 0; transform: scale(0.92); }
-  to { opacity: 1; transform: scale(1); }
+/* ===== Shared controls ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  padding: 0 var(--space-5);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-control);
+  background: transparent;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-base);
+  letter-spacing: -0.01em;
+  transition: background-color 120ms var(--ease), color 120ms var(--ease), border-color 120ms var(--ease);
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+.btn:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--paper);
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+.btn--primary {
+  background: var(--slate);
+  border-color: var(--slate);
+  color: var(--paper);
 }
 
-@keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+.btn--primary:hover:not(:disabled) {
+  background: var(--slate-deep);
+  border-color: var(--slate-deep);
 }
 
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+.btn:disabled {
+  border-color: var(--rule-strong);
+  background: var(--paper-sunk);
+  color: var(--ink-3);
 }
 
-@keyframes rotate {
-  from { transform: rotate(0deg); }
+.btn--quiet {
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border-color: transparent;
+  color: var(--ink-2);
+  font-weight: 600;
+  font-family: var(--font-body);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--rule-strong);
+}
+
+.btn--quiet:hover:not(:disabled) {
+  background: transparent;
+  color: var(--ink);
+  text-decoration-color: var(--ink);
+}
+
+.field {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--space-4);
+  border: 2px solid var(--rule-strong);
+  border-radius: var(--radius-control);
+  background: var(--tile);
+  font-size: var(--text-lg);
+  transition: border-color 120ms var(--ease);
+}
+
+.field::placeholder {
+  color: var(--ink-3);
+}
+
+.field:hover:not(:disabled) {
+  border-color: var(--ink-3);
+}
+
+.field:focus {
+  outline: none;
+  border-color: var(--slate);
+  box-shadow: none;
+}
+
+.field:disabled {
+  background: var(--paper-sunk);
+  color: var(--ink-3);
+}
+
+/* A letter tile. Size comes from --size so the same part scales from hand to hero. */
+.tile {
+  --size: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size);
+  height: var(--size);
+  flex: none;
+  border: 2px solid var(--ink);
+  border-bottom-width: calc(2px + var(--tile-edge));
+  border-radius: var(--radius-tile);
+  background: var(--tile);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: calc(var(--size) * 0.5);
+  line-height: 1;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.tile--link {
+  background: var(--amber);
+  border-color: var(--ink);
+}
+
+.tile--slate {
+  background: var(--slate);
+  border-color: var(--slate-deep);
+  color: var(--paper);
+}
+
+.tile--sm {
+  --size: 30px;
+  border-width: 1.5px;
+  border-bottom-width: calc(1.5px + 2px);
+  border-radius: 6px;
+}
+
+/* Screen change: a quick fade only. No slide-up on every section. */
+.animate-in {
+  animation: screenIn 140ms linear both;
+}
+
+@keyframes screenIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-@keyframes letterPop {
-  0% { transform: scale(0.3) rotate(-15deg); opacity: 0; }
-  60% { transform: scale(1.15) rotate(3deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
 }
 
-@keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(108, 99, 255, 0.2); }
-  50% { box-shadow: 0 0 40px rgba(108, 99, 255, 0.4); }
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
-@keyframes successFlash {
-  0% { background: rgba(0, 212, 170, 0); }
-  30% { background: rgba(0, 212, 170, 0.1); }
-  100% { background: rgba(0, 212, 170, 0); }
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+/* ===== Roster: players as ruled rows, shared by both lobbies and the board ===== */
+.roster {
+  list-style: none;
+  border-top: 1px solid var(--rule);
 }
 
-@keyframes typewriterBlink {
-  0%, 100% { border-color: var(--accent-primary); }
-  50% { border-color: transparent; }
+.roster__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--rule);
 }
 
-.animate-in {
-  animation: fadeIn 0.5s var(--transition-slow) both;
+.roster__avatar {
+  --size: 34px;
+  font-size: 15px;
 }
 
-/* ===== Scrollbar ===== */
-::-webkit-scrollbar {
-  width: 6px;
+.roster__name {
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px var(--space-2);
+  border: 1.5px solid var(--ink);
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(108, 99, 255, 0.3);
-  border-radius: var(--radius-full);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(108, 99, 255, 0.5);
+.badge--slate {
+  background: var(--slate);
+  border-color: var(--slate);
+  color: var(--paper);
 }

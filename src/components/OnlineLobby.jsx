@@ -1,34 +1,46 @@
 import { useState, useRef, useEffect } from 'react';
 import './OnlineLobby.css';
 
+const sanitizeCode = (value) => (value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+
+// Drop ?room=CODE from the address bar once it has been used.
+function clearRoomParam() {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('room')) {
+        url.searchParams.delete('room');
+        window.history.replaceState({}, '', url);
+    }
+}
+
 export default function OnlineLobby({
     roomCode,
     players,
     isHost,
     connectionStatus,
     error,
+    initialCode = '',
     onCreateRoom,
     onJoinRoom,
     onStartGame,
     onLeaveRoom,
     onClearError,
 }) {
-    const [view, setView] = useState('choice'); // choice | create | join | waiting
+    // choice | create | join. The waiting room is derived from roomCode below.
+    const [view, setView] = useState(initialCode ? 'join' : 'choice');
     const [name, setName] = useState('');
-    const [joinCode, setJoinCode] = useState('');
+    const [joinCode, setJoinCode] = useState(sanitizeCode(initialCode));
     const [isLoading, setIsLoading] = useState(false);
+    const [copied, setCopied] = useState(''); // '' | 'code' | 'link'
     const nameInputRef = useRef(null);
     const codeInputRef = useRef(null);
+
+    // Once we have a roomCode we are in the waiting room; if it goes away we fall back to the form.
+    const activeView = roomCode ? 'waiting' : view;
 
     useEffect(() => {
         if (view === 'create') nameInputRef.current?.focus();
         if (view === 'join') codeInputRef.current?.focus();
     }, [view]);
-
-    // Once we have a roomCode, we're in the waiting room
-    useEffect(() => {
-        if (roomCode) setView('waiting');
-    }, [roomCode]);
 
     const handleCreate = async (e) => {
         e.preventDefault();
@@ -36,6 +48,7 @@ export default function OnlineLobby({
         setIsLoading(true);
         try {
             await onCreateRoom(name.trim());
+            clearRoomParam();
         } catch {
             // error is set in hook
         } finally {
@@ -49,6 +62,7 @@ export default function OnlineLobby({
         setIsLoading(true);
         try {
             await onJoinRoom(joinCode.trim(), name.trim());
+            clearRoomParam();
         } catch {
             // error is set in hook
         } finally {
@@ -56,197 +70,223 @@ export default function OnlineLobby({
         }
     };
 
-    const copyCode = () => {
-        navigator.clipboard?.writeText(roomCode);
+    const flashCopied = (what) => {
+        setCopied(what);
+        setTimeout(() => setCopied(''), 1800);
     };
 
-    const connectionDot = connectionStatus === 'connected'
+    const copyText = async (text, what) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            flashCopied(what);
+        } catch {
+            // clipboard unavailable (insecure context or permission denied)
+        }
+    };
+
+    const copyCode = () => copyText(roomCode, 'code');
+
+    // One tap on a phone opens the native share sheet (WhatsApp etc.); desktop copies the link.
+    const shareLink = async () => {
+        const url = `${window.location.origin}${import.meta.env.BASE_URL}?room=${roomCode}`;
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'English Shiritori',
+                    text: `Join my Shiritori room ${roomCode}`,
+                    url,
+                });
+                return;
+            } catch (e) {
+                if (e?.name === 'AbortError') return; // user closed the share sheet
+            }
+        }
+        copyText(url, 'link');
+    };
+
+    const statusLabel = connectionStatus === 'connected' ? 'Connected' : connectionStatus === 'connecting' ? 'Connecting…' : 'Disconnected';
+    const statusClass = connectionStatus === 'connected'
         ? 'online-lobby__dot--connected'
         : connectionStatus === 'connecting'
             ? 'online-lobby__dot--connecting'
             : 'online-lobby__dot--disconnected';
 
+    const backToChoice = () => { onClearError?.(); setView('choice'); };
+
     // ── Choice View ──────────────────────────────────────
-    if (view === 'choice') {
+    if (activeView === 'choice') {
         return (
             <div className="online-lobby animate-in">
-                <div className="online-lobby__hero">
-                    <div className="online-lobby__hero-icon">🌐</div>
-                    <h2 className="online-lobby__hero-title">Online Multiplayer</h2>
-                    <p className="online-lobby__hero-desc">Play with friends on different devices</p>
-                </div>
+                <h2 className="online-lobby__title">Play online</h2>
+                <p className="online-lobby__lead">Start a room and share its link, or join a friend’s room with their code.</p>
 
                 <div className="online-lobby__choices">
-                    <button className="online-lobby__choice online-lobby__choice--create" onClick={() => { onClearError?.(); setView('create'); }} id="choice-create-btn">
-                        <span className="online-lobby__choice-icon">✨</span>
-                        <span className="online-lobby__choice-label">Create Room</span>
-                        <span className="online-lobby__choice-desc">Start a new game room</span>
+                    <button className="btn btn--primary online-lobby__choice" onClick={() => { onClearError?.(); setView('create'); }} id="choice-create-btn">
+                        <span className="online-lobby__choice-label">Create a room</span>
+                        <span className="online-lobby__choice-desc">You host and start the game.</span>
                     </button>
 
-                    <button className="online-lobby__choice online-lobby__choice--join" onClick={() => { onClearError?.(); setView('join'); }} id="choice-join-btn">
-                        <span className="online-lobby__choice-icon">🔗</span>
-                        <span className="online-lobby__choice-label">Join Room</span>
-                        <span className="online-lobby__choice-desc">Enter a room code</span>
+                    <button className="btn online-lobby__choice" onClick={() => { onClearError?.(); setView('join'); }} id="choice-join-btn">
+                        <span className="online-lobby__choice-label">Join a room</span>
+                        <span className="online-lobby__choice-desc">Enter the 6-letter code.</span>
                     </button>
                 </div>
 
-                <button className="online-lobby__back-btn" onClick={onLeaveRoom} id="back-to-home-btn">
-                    ← Back to Home
+                <button className="btn btn--quiet online-lobby__back" onClick={onLeaveRoom} id="back-to-home-btn">
+                    Back to home
                 </button>
             </div>
         );
     }
 
     // ── Create View ──────────────────────────────────────
-    if (view === 'create') {
+    if (activeView === 'create') {
         return (
             <div className="online-lobby animate-in">
-                <div className="online-lobby__card">
-                    <h2 className="online-lobby__card-title">Create Room</h2>
-                    <form className="online-lobby__form" onSubmit={handleCreate}>
-                        <input
-                            ref={nameInputRef}
-                            id="create-name-input"
-                            className="online-lobby__input"
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="Your name..."
-                            maxLength={20}
-                            disabled={isLoading}
-                        />
-                        <button
-                            type="submit"
-                            className="online-lobby__submit-btn"
-                            disabled={!name.trim() || isLoading}
-                            id="create-room-btn"
-                        >
-                            {isLoading ? <span className="online-lobby__spinner" /> : 'Create Room'}
-                        </button>
-                    </form>
-                    {error && <p className="online-lobby__error">{error}</p>}
-                    <button className="online-lobby__back-link" onClick={() => { onClearError?.(); setView('choice'); }}>
-                        ← Back
+                <h2 className="online-lobby__title">Create a room</h2>
+                <form className="online-lobby__form" onSubmit={handleCreate}>
+                    <label className="visually-hidden" htmlFor="create-name-input">Your name</label>
+                    <input
+                        ref={nameInputRef}
+                        id="create-name-input"
+                        className="field"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Your name"
+                        maxLength={20}
+                        autoComplete="off"
+                        disabled={isLoading}
+                    />
+                    <button
+                        type="submit"
+                        className="btn btn--primary"
+                        disabled={!name.trim() || isLoading}
+                        id="create-room-btn"
+                    >
+                        {isLoading ? <span className="spinner" aria-label="Creating room" /> : 'Create room'}
                     </button>
-                </div>
+                </form>
+                {error && <p className="notice notice--error" role="alert">{error}</p>}
+                <button className="btn btn--quiet online-lobby__back" onClick={backToChoice}>
+                    Back
+                </button>
             </div>
         );
     }
 
     // ── Join View ────────────────────────────────────────
-    if (view === 'join') {
+    if (activeView === 'join') {
         return (
             <div className="online-lobby animate-in">
-                <div className="online-lobby__card">
-                    <h2 className="online-lobby__card-title">Join Room</h2>
-                    <form className="online-lobby__form" onSubmit={handleJoin}>
-                        <input
-                            ref={codeInputRef}
-                            id="join-code-input"
-                            className="online-lobby__input online-lobby__input--code"
-                            type="text"
-                            value={joinCode}
-                            onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                            placeholder="Room code..."
-                            maxLength={6}
-                            disabled={isLoading}
-                        />
-                        <input
-                            id="join-name-input"
-                            className="online-lobby__input"
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="Your name..."
-                            maxLength={20}
-                            disabled={isLoading}
-                        />
-                        <button
-                            type="submit"
-                            className="online-lobby__submit-btn"
-                            disabled={!name.trim() || !joinCode.trim() || isLoading}
-                            id="join-room-btn"
-                        >
-                            {isLoading ? <span className="online-lobby__spinner" /> : 'Join Room'}
-                        </button>
-                    </form>
-                    {error && <p className="online-lobby__error">{error}</p>}
-                    <button className="online-lobby__back-link" onClick={() => { onClearError?.(); setView('choice'); }}>
-                        ← Back
+                <h2 className="online-lobby__title">Join a room</h2>
+                <form className="online-lobby__form" onSubmit={handleJoin}>
+                    <label className="visually-hidden" htmlFor="join-code-input">Room code</label>
+                    <input
+                        ref={codeInputRef}
+                        id="join-code-input"
+                        className="field online-lobby__code-input"
+                        type="text"
+                        value={joinCode}
+                        onChange={(e) => setJoinCode(sanitizeCode(e.target.value))}
+                        placeholder="Room code"
+                        maxLength={6}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="characters"
+                        spellCheck={false}
+                        disabled={isLoading}
+                    />
+                    <label className="visually-hidden" htmlFor="join-name-input">Your name</label>
+                    <input
+                        id="join-name-input"
+                        className="field"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Your name"
+                        maxLength={20}
+                        autoComplete="off"
+                        disabled={isLoading}
+                    />
+                    <button
+                        type="submit"
+                        className="btn btn--primary"
+                        disabled={!name.trim() || !joinCode.trim() || isLoading}
+                        id="join-room-btn"
+                    >
+                        {isLoading ? <span className="spinner" aria-label="Joining room" /> : 'Join room'}
                     </button>
-                </div>
+                </form>
+                {error && <p className="notice notice--error" role="alert">{error}</p>}
+                <button className="btn btn--quiet online-lobby__back" onClick={backToChoice}>
+                    Back
+                </button>
             </div>
         );
     }
 
     // ── Waiting Room (after create/join) ─────────────────
     return (
-        <div className="online-lobby animate-in">
-            <div className="online-lobby__card">
-                <div className="online-lobby__status-bar">
-                    <span className={`online-lobby__dot ${connectionDot}`} />
-                    <span className="online-lobby__status-text">
-                        {connectionStatus === 'connected' ? 'Connected' : connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
-                    </span>
+        <div className="online-lobby online-lobby--room animate-in">
+            <h2 className="online-lobby__title">Waiting room</h2>
+
+            <p className="online-lobby__status" role="status">
+                <span className={`online-lobby__dot ${statusClass}`} />
+                {statusLabel}
+            </p>
+
+            <section className="online-lobby__invite" aria-label="Invite friends">
+                <p className="online-lobby__invite-label">Room code</p>
+                <div className="online-lobby__code" id="room-code-display" aria-label={`Room code ${roomCode}`}>
+                    {roomCode.split('').map((ch, i) => (
+                        <span key={i} className="tile tile--slate online-lobby__code-tile" aria-hidden="true">{ch}</span>
+                    ))}
                 </div>
-
-                <h2 className="online-lobby__card-title">Room Lobby</h2>
-
-                <div className="online-lobby__room-code-section">
-                    <span className="online-lobby__room-code-label">Room Code</span>
-                    <div className="online-lobby__room-code-display">
-                        <span className="online-lobby__room-code" id="room-code-display">{roomCode}</span>
-                        <button className="online-lobby__copy-btn" onClick={copyCode} title="Copy code" id="copy-code-btn">
-                            📋
-                        </button>
-                    </div>
-                    <p className="online-lobby__room-code-hint">Share this code with friends to join</p>
-                </div>
-
-                <div className="online-lobby__players">
-                    <h3 className="online-lobby__players-title">
-                        Players ({players.length}/8)
-                    </h3>
-                    <ul className="online-lobby__player-list">
-                        {players.map((p, i) => (
-                            <li key={p.id} className="online-lobby__player" style={{ animationDelay: `${i * 0.1}s` }}>
-                                <div className="online-lobby__player-avatar" style={{ background: `hsl(${(i * 72) % 360}, 65%, 55%)` }}>
-                                    {p.name[0].toUpperCase()}
-                                </div>
-                                <span className="online-lobby__player-name">{p.name}</span>
-                                {i === 0 && <span className="online-lobby__host-badge">Host</span>}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-
-                {error && <p className="online-lobby__error">{error}</p>}
-
-                {isHost && (
-                    <button
-                        className="online-lobby__start-btn"
-                        onClick={onStartGame}
-                        disabled={players.length < 2}
-                        id="online-start-btn"
-                    >
-                        <span className="online-lobby__start-btn-text">
-                            {players.length < 2 ? 'Waiting for players...' : 'Start Game'}
-                        </span>
-                        {players.length >= 2 && <span className="online-lobby__start-btn-icon">→</span>}
+                <div className="online-lobby__invite-actions">
+                    <button className="btn btn--primary" onClick={shareLink} id="share-link-btn">
+                        {copied === 'link' ? 'Link copied' : 'Share invite link'}
                     </button>
-                )}
+                    <button className="btn" onClick={copyCode} id="copy-code-btn">
+                        {copied === 'code' ? 'Code copied' : 'Copy code'}
+                    </button>
+                </div>
+            </section>
 
-                {!isHost && (
-                    <div className="online-lobby__waiting-msg">
-                        <span className="online-lobby__waiting-spinner" />
-                        Waiting for host to start...
-                    </div>
-                )}
+            <section aria-label="Players">
+                <h3 className="online-lobby__players-title">Players ({players.length} of 8)</h3>
+                <ul className="roster">
+                    {players.map((p, i) => (
+                        <li key={p.id} className="roster__row">
+                            <span className="tile tile--sm roster__avatar" aria-hidden="true">{p.name[0]}</span>
+                            <span className="roster__name">{p.name}</span>
+                            {i === 0 && <span className="badge">Host</span>}
+                        </li>
+                    ))}
+                </ul>
+            </section>
 
-                <button className="online-lobby__leave-btn" onClick={onLeaveRoom} id="leave-room-btn">
-                    Leave Room
+            {error && <p className="notice notice--error" role="alert">{error}</p>}
+
+            {isHost ? (
+                <button
+                    className="btn btn--primary online-lobby__start-btn"
+                    onClick={onStartGame}
+                    disabled={players.length < 2}
+                    id="online-start-btn"
+                >
+                    {players.length < 2 ? 'Waiting for players…' : 'Start game'}
                 </button>
-            </div>
+            ) : (
+                <p className="online-lobby__waiting-msg">
+                    <span className="spinner" aria-hidden="true" />
+                    Waiting for host to start...
+                </p>
+            )}
+
+            <button className="btn btn--quiet online-lobby__back" onClick={onLeaveRoom} id="leave-room-btn">
+                Leave room
+            </button>
         </div>
     );
 }

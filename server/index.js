@@ -86,7 +86,7 @@ function log(room, text, type = 'info') {
   return msg;
 }
 
-function getPublicState(room, forPlayerId = null) {
+function getPublicState(room) {
   return {
     code: room.code,
     hostId: room.hostId,

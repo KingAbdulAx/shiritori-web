@@ -1,16 +1,19 @@
 .app {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
 
 .app__main {
   flex: 1;
-  padding-bottom: var(--space-4xl);
+  padding-top: var(--space-6);
+  padding-bottom: var(--space-8);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
   .app__main {
-    padding-bottom: var(--space-lg);
+    padding-top: var(--space-5);
+    padding-bottom: var(--space-6);
   }
 }

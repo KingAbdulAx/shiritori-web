@@ -1,129 +1,122 @@
 .header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    padding: var(--space-md) 0;
-    background: rgba(10, 10, 20, 0.8);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
 }
 
 .header__inner {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 0 var(--space-lg);
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: 64px;
 }
 
 .header__brand {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.header__logo {
-    display: flex;
     align-items: center;
-    gap: var(--space-sm);
+    gap: var(--space-3);
 }
 
-.header__logo-icon {
-    font-size: var(--text-2xl);
-    animation: float 3s ease-in-out infinite;
+.header__mark {
+    --size: 30px;
+    font-size: 16px;
 }
 
 .header__title {
-    font-family: var(--font-display);
-    font-size: var(--text-2xl);
-    font-weight: 800;
-    background: var(--gradient-accent);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: -0.02em;
-}
-
-.header__subtitle {
-    font-size: var(--text-xs);
-    color: var(--text-muted);
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: var(--text-xl);
+    font-weight: 900;
+    letter-spacing: -0.035em;
 }
 
 .header__info {
     display: flex;
     align-items: center;
-    gap: var(--space-md);
+    gap: var(--space-4);
+    min-width: 0;
 }
 
-.header__round-badge {
-    padding: var(--space-xs) var(--space-md);
-    background: var(--bg-glass-strong);
-    border: 1px solid var(--border-accent);
-    border-radius: var(--radius-full);
+.header__room {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-2);
+}
+
+.header__room-label {
     font-size: var(--text-sm);
-    font-weight: 600;
-    color: var(--accent-primary);
+    color: var(--ink-3);
+}
+
+.header__room-code {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-lg);
+    letter-spacing: 0.08em;
 }
 
 .header__reset-btn {
-    padding: var(--space-xs) var(--space-md);
-    background: rgba(255, 107, 107, 0.1);
-    border: 1px solid rgba(255, 107, 107, 0.25);
-    border-radius: var(--radius-full);
-    color: var(--accent-warning);
+    white-space: nowrap;
+}
+
+.header__round {
     font-size: var(--text-sm);
     font-weight: 600;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    font-family: var(--font-body);
+    color: var(--ink-2);
+    white-space: nowrap;
 }
 
-.header__reset-btn:hover {
-    background: rgba(255, 107, 107, 0.2);
-    border-color: rgba(255, 107, 107, 0.5);
-    transform: translateY(-1px);
-}
-
-/* ── Online Mode ── */
 .header__connection {
-    display: flex;
+    display: inline-flex;
     align-items: center;
 }
 
 .header__connection-dot {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
-    display: inline-block;
+    background: var(--ink-3);
 }
 
-.header__connection-dot--connected {
-    background: var(--accent-secondary);
-    box-shadow: 0 0 8px rgba(0, 212, 170, 0.5);
+.header__connection--connected .header__connection-dot {
+    background: var(--good);
 }
 
-.header__connection-dot--connecting {
-    background: var(--accent-gold);
-    animation: pulse 1s infinite;
+.header__connection--connecting .header__connection-dot {
+    background: var(--amber);
+    animation: connectionBlink 1s steps(2, jump-none) infinite;
 }
 
-.header__connection-dot--disconnected {
-    background: var(--accent-warning);
+.header__connection--disconnected .header__connection-dot {
+    background: var(--bad);
 }
 
-.header__room-badge {
-    padding: var(--space-xs) var(--space-md);
-    background: rgba(0, 212, 170, 0.1);
-    border: 1px solid rgba(0, 212, 170, 0.25);
-    border-radius: var(--radius-full);
-    font-size: var(--text-sm);
-    font-weight: 700;
-    font-family: var(--font-display);
-    color: var(--accent-secondary);
-    letter-spacing: 2px;
+@keyframes connectionBlink {
+    50% { opacity: 0.25; }
+}
+
+@media (max-width: 600px) {
+    .header__inner {
+        min-height: 56px;
+    }
+
+    .header__info {
+        gap: var(--space-3);
+    }
+
+    .header__title {
+        font-size: var(--text-lg);
+    }
+
+    .header__reset-btn {
+        padding: 0 var(--space-2);
+    }
+
+    .header__room-label,
+    .header__reset-extra {
+        display: none;
+    }
+
+    /* In a game the wordmark gives way to room, round and leave. */
+    .header--game .header__title {
+        display: none;
+    }
 }
