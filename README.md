@@ -1,6 +1,6 @@
-# Tailword
+# Renga
 
-A word-chain game for phones and browsers. Each word starts with the last letter of the one before it, and the first player to empty their hand of letters wins the round. Inspired by shiritori, the Japanese word-chain game. Built with React + Vite, with a Socket.IO server for online rooms.
+A word-chain game for phones and browsers. Each word starts with the last letter of the one before it, and the first player to empty their hand of letters wins the round. Named after renga, the Japanese linked-verse tradition where each verse picks up from the last, and inspired by shiritori, the Japanese word-chain game. Built with React + Vite, with a Socket.IO server for online rooms.
 
 > Started as a [Discord bot](https://github.com/KingAbdulAx/English-Shiritori-Discord-Bot).
 
@@ -62,13 +62,13 @@ Frontend variables (see `.env.example`; Vite inlines them **at build time**, so 
 | -------- | -------- | ------- |
 | `VITE_SERVER_URL` | Production | Game server URL, no trailing slash, `https://` on an https site |
 | `VITE_SOCKET_PATH` | No | Socket.IO path (default `/socket.io`) |
-| `VITE_BASE` | No | Public base path when served under a sub-path, e.g. `/tailword/` (default `/`) |
+| `VITE_BASE` | No | Public base path when served under a sub-path, e.g. `/renga/` (default `/`) |
 
 Server variable (set in Coolify):
 
 | Variable | Required | Purpose |
 | -------- | -------- | ------- |
-| `ALLOWED_ORIGINS` | Recommended | Comma-separated sites allowed to connect, e.g. `https://tailword.azedlabs.com`. Unset means any origin |
+| `ALLOWED_ORIGINS` | Recommended | Comma-separated sites allowed to connect, e.g. `https://renga.azedlabs.com`. Unset means any origin |
 | `PORT` | No | Defaults to `3001` |
 
 If `VITE_SERVER_URL` is missing in a production build, online play is disabled with a clear message instead of silently pointing players at their own machine.

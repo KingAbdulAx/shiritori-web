@@ -101,8 +101,8 @@ export default function OnlineLobby({
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'Tailword',
-                    text: `Join my Tailword room ${roomCode}`,
+                    title: 'Renga',
+                    text: `Join my Renga room ${roomCode}`,
                     url,
                 });
                 return;

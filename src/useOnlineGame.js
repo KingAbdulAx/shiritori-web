@@ -94,7 +94,7 @@ export default function useOnlineGame() {
         if (socketRef.current) return socketRef.current;
 
         if (CONFIG_PROBLEM) {
-            console.error(`[tailword] ${CONFIG_PROBLEM}`);
+            console.error(`[renga] ${CONFIG_PROBLEM}`);
             setError(MSG_UNAVAILABLE);
             setResuming(false);
             return null;

@@ -10,7 +10,7 @@ import { fetchDefinition } from './definition.js';
 
 // ── Config ───────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
-// Comma-separated list of allowed browser origins, e.g. https://tailword.azedlabs.com.
+// Comma-separated list of allowed browser origins, e.g. https://renga.azedlabs.com.
 // Unset means any origin may connect.
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
 const corsOrigin = ALLOWED_ORIGINS.length ? ALLOWED_ORIGINS : '*';
@@ -167,5 +167,5 @@ io.on('connection', (socket) => {
 });
 
 httpServer.listen(PORT, () => {
-  console.log(`Tailword server listening on port ${PORT} (${dictionary.size} words, origins: ${ALLOWED_ORIGINS.join(', ') || 'any'})`);
+  console.log(`Renga server listening on port ${PORT} (${dictionary.size} words, origins: ${ALLOWED_ORIGINS.join(', ') || 'any'})`);
 });

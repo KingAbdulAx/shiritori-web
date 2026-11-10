@@ -1,5 +1,5 @@
 // Remembers which room this tab is in, so a reload or a dropped connection can take the seat back.
-const KEY = 'tailword.session';
+const KEY = 'renga.session';
 
 export function loadSession() {
     try {

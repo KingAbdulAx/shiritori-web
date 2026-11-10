@@ -83,7 +83,7 @@ export default function Home({ onSelectMode }) {
                     <li>Rush mode: everyone types at once and the first valid word takes the letter. A wrong word locks you out for a moment instead.</li>
                     <li>Empty your hand first to win the round. A game is three rounds.</li>
                 </ol>
-                <p className="home__origin">Inspired by shiritori, the Japanese word-chain game.</p>
+                <p className="home__origin">Named after renga, Japanese linked verse where each verse picks up from the last. Inspired by shiritori, the Japanese word-chain game.</p>
             </section>
         </div>
     );

@@ -12,8 +12,8 @@ export default function Header({ phase, round, maxRounds, onReset, isOnline, roo
         <header className={`header ${inGame ? 'header--game' : ''}`}>
             <div className="header__inner container">
                 <div className="header__brand">
-                    <span className="tile tile--link tile--sm header__mark" aria-hidden="true">T</span>
-                    <h1 className="header__title">Tailword</h1>
+                    <span className="tile tile--link tile--sm header__mark" aria-hidden="true">R</span>
+                    <h1 className="header__title">Renga</h1>
                 </div>
 
                 <div className="header__info">
