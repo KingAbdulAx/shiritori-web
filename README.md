@@ -68,10 +68,12 @@ Server variable (set in Coolify):
 
 | Variable | Required | Purpose |
 | -------- | -------- | ------- |
-| `ALLOWED_ORIGINS` | Recommended | Comma-separated sites allowed to connect, e.g. `https://renga.azedlabs.com`. Unset means any origin |
+| `ALLOWED_ORIGINS` | Recommended | Comma-separated sites allowed to connect, e.g. `https://games.azedlabs.com`. Applies to WebSocket connections too. Unset means any origin |
 | `PORT` | No | Defaults to `3001` |
 
 If `VITE_SERVER_URL` is missing in a production build, online play is disabled with a clear message instead of silently pointing players at their own machine.
+
+**Under the games hub.** Renga is served at `games.azedlabs.com/renga/`. Build it with `VITE_BASE=/renga/`. The included `vercel.json` makes the project answer on `/renga/` itself, so the hub only has to forward the path. Setup lives in the hub repo's README.
 
 Server notes: `GET /health` reports status, open rooms and word count. Rooms live in memory, so run a single instance; a restart ends active games and players see a "connection lost" message. Idle rooms are swept after 3 hours.
 

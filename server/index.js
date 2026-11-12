@@ -10,7 +10,7 @@ import { fetchDefinition } from './definition.js';
 
 // ── Config ───────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
-// Comma-separated list of allowed browser origins, e.g. https://renga.azedlabs.com.
+// Comma-separated list of allowed browser origins, e.g. https://games.azedlabs.com.
 // Unset means any origin may connect.
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
 const corsOrigin = ALLOWED_ORIGINS.length ? ALLOWED_ORIGINS : '*';
@@ -37,6 +37,12 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: { origin: corsOrigin, methods: ['GET', 'POST'] },
   maxHttpBufferSize: 1e4,
+  // CORS headers do not apply to WebSocket upgrades, so check the Origin header ourselves.
+  // Requests with no Origin (scripts, tests) are not browsers and are let through.
+  allowRequest: (req, callback) => {
+    const origin = req.headers.origin;
+    callback(null, !ALLOWED_ORIGINS.length || !origin || ALLOWED_ORIGINS.includes(origin));
+  },
 });
 
 app.get('/health', (req, res) => {

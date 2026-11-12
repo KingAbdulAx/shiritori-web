@@ -6,7 +6,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
-    // Public base path. Leave unset for a root deployment; set e.g. VITE_BASE=/eshiritori/
+    // Public base path. Leave unset for a root deployment; set e.g. VITE_BASE=/renga/
     // when the app is served under a sub-path (games hub).
     base: env.VITE_BASE || '/',
     plugins: [react()],

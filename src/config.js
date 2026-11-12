@@ -1,10 +1,10 @@
 // Build-time configuration (Vite inlines import.meta.env at build).
 //
-//   VITE_SERVER_URL   Socket.IO server, e.g. https://eshiritori-api.azedlabs.com
+//   VITE_SERVER_URL   Socket.IO server, e.g. https://renga-api.azedlabs.com
 //                     (no trailing slash). Required for production builds.
 //   VITE_SOCKET_PATH  Optional. Socket.IO path on the server (default /socket.io).
 //   VITE_BASE         Optional. Public base path of the app (default /), e.g.
-//                     /eshiritori/ when served under a games hub. Read in vite.config.js.
+//                     /renga/ when served under a games hub. Read in vite.config.js.
 
 const isLocalhost = (url) => /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(url);
 
